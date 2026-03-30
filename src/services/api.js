@@ -1,7 +1,11 @@
+
 import axios from "axios";
 
+// Dev: Vite proxy → /api. Prod: VITE_API_URL=https://your-backend.onrender.com (no /api suffix)
+let apiRoot = (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
+if (apiRoot.endsWith("/api")) apiRoot = apiRoot.slice(0, -4);
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: apiRoot ? `${apiRoot}/api` : "/api",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

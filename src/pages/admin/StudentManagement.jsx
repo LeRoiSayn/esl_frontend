@@ -66,15 +66,10 @@ const StudentManagement = () => {
   const fetchStudentDetails = async (studentId) => {
     try {
       const response = await api.get(`/admin/students/${studentId}/details`);
-      console.log('fetchStudentDetails response:', response.data);
       // normalize response shape: backend may return { data: { ... } } or directly the object
       setSelectedStudent(response.data.data || response.data);
     } catch (_) {}
   };
-
-  useEffect(() => {
-    console.log('selectedStudent changed:', selectedStudent);
-  }, [selectedStudent]);
 
   // Close report dropdown when clicking outside
   useEffect(() => {
@@ -87,19 +82,27 @@ const StudentManagement = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const escHtml = (val) =>
+    String(val ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
   const generateAcademicReportHtml = (
     student,
     courses,
     uniName = "ESL University",
     logoPath = "/logo.png",
   ) => {
-    const fullName = `${student.student.user?.first_name || ""} ${student.student.user?.last_name || ""}`;
+    const fullName = `${escHtml(student.student.user?.first_name)} ${escHtml(student.student.user?.last_name)}`.trim();
     const studentInfo = `
       <tr><td><strong>Nom</strong></td><td>${fullName}</td></tr>
-      <tr><td><strong>Email</strong></td><td>${student.student.user?.email || ""}</td></tr>
-      <tr><td><strong>Numéro</strong></td><td>${student.student.student_id || ""}</td></tr>
-      <tr><td><strong>Département</strong></td><td>${student.student.department?.name || ""}</td></tr>
-      <tr><td><strong>Niveau</strong></td><td>${student.student.level || ""}</td></tr>
+      <tr><td><strong>Email</strong></td><td>${escHtml(student.student.user?.email)}</td></tr>
+      <tr><td><strong>Numéro</strong></td><td>${escHtml(student.student.student_id)}</td></tr>
+      <tr><td><strong>Département</strong></td><td>${escHtml(student.student.department?.name)}</td></tr>
+      <tr><td><strong>Niveau</strong></td><td>${escHtml(student.student.level)}</td></tr>
     `;
 
     // Map grades by course id
@@ -114,15 +117,15 @@ const StudentManagement = () => {
     const coursesRows = courses
       .map((c) => {
         const g = gradesMap[c.id] || null
-        const gradeCell = g ? `${g.final_grade}/100 (${g.letter_grade || ""})` : "—"
-        const semester = g?.semester || ""
+        const gradeCell = g ? `${escHtml(g.final_grade)}/100 (${escHtml(g.letter_grade)})` : "—"
+        const semester = escHtml(g?.semester)
         const status = enrolledIds.has(c.id) ? "Inscrit" : "Non inscrit"
         return `
       <tr>
-        <td>${c.code || ""}</td>
-        <td>${c.name || ""}</td>
-        <td>${c.level || ""}</td>
-        <td>${c.credits || ""}</td>
+        <td>${escHtml(c.code)}</td>
+        <td>${escHtml(c.name)}</td>
+        <td>${escHtml(c.level)}</td>
+        <td>${escHtml(c.credits)}</td>
         <td>${semester}</td>
         <td>${gradeCell}</td>
         <td>${status}</td>
@@ -136,7 +139,7 @@ const StudentManagement = () => {
       <html>
       <head>
         <meta charset="utf-8" />
-        <title>Rapport académique - ${fullName}</title>
+        <title>Rapport académique - ${escHtml(fullName)}</title>
         <style>
           body{font-family:Helvetica, Arial, sans-serif;padding:24px;color:#111}
           .header{display:flex;align-items:center;gap:16px}
@@ -184,7 +187,7 @@ const StudentManagement = () => {
     uniName = "ESL University",
     logoPath = "/logo.png",
   ) => {
-    const fullName = `${student.student.user?.first_name || ""} ${student.student.user?.last_name || ""}`;
+    const fullName = `${escHtml(student.student.user?.first_name)} ${escHtml(student.student.user?.last_name)}`.trim();
 
     // Group fees by academic year
     const fees = student.student?.fees || []
@@ -219,7 +222,7 @@ const StudentManagement = () => {
         const balance = (entry.totalDue || 0) - (entry.payments || 0)
         return `
         <tr>
-          <td>${y}</td>
+          <td>${escHtml(y)}</td>
           <td>${(entry.totalDue || 0).toLocaleString()}</td>
           <td>${(entry.payments || 0).toLocaleString()}</td>
           <td>${balance.toLocaleString()}</td>
@@ -233,11 +236,11 @@ const StudentManagement = () => {
       .map(
         (p) => `
       <tr>
-        <td>${new Date(p.created_at).toLocaleDateString()}</td>
-        <td>${p.academic_year || ""}</td>
-        <td>${p.payment_method || p.method || ""}</td>
+        <td>${escHtml(new Date(p.created_at).toLocaleDateString())}</td>
+        <td>${escHtml(p.academic_year)}</td>
+        <td>${escHtml(p.payment_method || p.method)}</td>
         <td>${(p.amount || p.total || 0).toLocaleString()}</td>
-        <td>${p.reference || p.txn_id || ""}</td>
+        <td>${escHtml(p.reference || p.txn_id)}</td>
       </tr>
     `,
       )
@@ -250,7 +253,7 @@ const StudentManagement = () => {
       <html>
       <head>
         <meta charset="utf-8" />
-        <title>Rapport financier - ${fullName}</title>
+        <title>Rapport financier - ${escHtml(fullName)}</title>
         <style>
           body{font-family:Helvetica, Arial, sans-serif;padding:24px;color:#111}
           .header{display:flex;align-items:center;gap:16px}
@@ -276,8 +279,8 @@ const StudentManagement = () => {
         <h2>Étudiant</h2>
         <table>
           <tr><td><strong>Nom</strong></td><td>${fullName}</td></tr>
-          <tr><td><strong>Email</strong></td><td>${student.student.user?.email || ""}</td></tr>
-          <tr><td><strong>Numéro</strong></td><td>${student.student.student_id || ""}</td></tr>
+          <tr><td><strong>Email</strong></td><td>${escHtml(student.student.user?.email)}</td></tr>
+          <tr><td><strong>Numéro</strong></td><td>${escHtml(student.student.student_id)}</td></tr>
           <tr><td><strong>Solde global</strong></td><td>${overallBalance.toLocaleString()} F</td></tr>
         </table>
 
