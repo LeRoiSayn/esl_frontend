@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -14,6 +15,7 @@ import {
   ArrowPathIcon,
   FunnelIcon,
   UserGroupIcon,
+  DocumentTextIcon,
 } from "@heroicons/react/24/outline";
 import api, {
   studentApi,
@@ -27,6 +29,7 @@ const LEVELS = ["L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3"];
 
 export default function UnifiedStudentManagement() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   // State for student list
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -138,6 +141,33 @@ export default function UnifiedStudentManagement() {
     setSelectedStudent(student);
     fetchStudentProfile(student.id);
     fetchAvailableCourses(student.id);
+  };
+
+  const openReport = async () => {
+    if (!selectedStudent?.id) return;
+
+    try {
+      // Default to Academic sheet
+      const res = await adminApi.getStudentAcademicSheet(selectedStudent.id);
+      const url = window.URL.createObjectURL(res.data);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      // Fallback to internal preview page (still printable), if needed
+      navigate(`/admin/student-management/${selectedStudent.id}/report`);
+    }
+  };
+
+  const openFinancialSheet = async () => {
+    if (!selectedStudent?.id) return;
+    try {
+      const res = await adminApi.getStudentFinancialSheet(selectedStudent.id);
+      const url = window.URL.createObjectURL(res.data);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+    } catch (e) {
+      navigate(`/admin/student-management/${selectedStudent.id}/report`);
+    }
   };
 
   const handleSearch = () => {
@@ -711,15 +741,33 @@ export default function UnifiedStudentManagement() {
                         </p>
                       </div>
                     </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        studentProfile.student.status === "active"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
-                      }`}
-                    >
-                      {studentProfile.student.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={openReport}
+                        className="btn-secondary"
+                        title="Academic sheet"
+                      >
+                        <DocumentTextIcon className="w-5 h-5 mr-2" />
+                        Academic sheet
+                      </button>
+                      <button
+                        onClick={openFinancialSheet}
+                        className="btn-secondary"
+                        title="Financial sheet"
+                      >
+                        <DocumentTextIcon className="w-5 h-5 mr-2" />
+                        Financial sheet
+                      </button>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          studentProfile.student.status === "active"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        {studentProfile.student.status}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Statistics */}

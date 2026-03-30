@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   MagnifyingGlassIcon,
   UserIcon,
@@ -15,98 +15,389 @@ import {
   XMarkIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
-} from '@heroicons/react/24/outline'
-import api from '../../services/api'
+} from "@heroicons/react/24/outline";
+import api, { courseApi } from "../../services/api";
 
 const StudentManagement = () => {
-  const [students, setStudents] = useState([])
-  const [selectedStudent, setSelectedStudent] = useState(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [students, setStudents] = useState([]);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
-    department_id: '',
-    level: '',
-    status: '',
-  })
-  const [isLoading, setIsLoading] = useState(false)
-  const [departments, setDepartments] = useState([])
-  const [showGradeModal, setShowGradeModal] = useState(null)
-  const [showCourseModal, setShowCourseModal] = useState(false)
+    department_id: "",
+    level: "",
+    status: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [showGradeModal, setShowGradeModal] = useState(null);
+  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [showReportDropdown, setShowReportDropdown] = useState(false);
+  const reportRef = useRef(null);
 
   useEffect(() => {
-    fetchDepartments()
-  }, [])
+    fetchDepartments();
+  }, []);
 
   const fetchDepartments = async () => {
     try {
-      const response = await api.get('/departments')
-      setDepartments(response.data.data || [])
-    } catch (_) {
-    }
-  }
+      const response = await api.get("/departments");
+      setDepartments(response.data.data || []);
+    } catch (_) {}
+  };
 
   const searchStudents = async () => {
-    if (!searchQuery.trim()) return
-    
-    setIsLoading(true)
+    if (!searchQuery.trim()) return;
+
+    setIsLoading(true);
     try {
-      const response = await api.get('/admin/students/search', {
+      const response = await api.get("/admin/students/search", {
         params: {
           search: searchQuery,
           ...filters,
         },
-      })
-      setStudents(response.data.data || [])
+      });
+      setStudents(response.data.data || []);
     } catch (_) {
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const fetchStudentDetails = async (studentId) => {
     try {
-      const response = await api.get(`/admin/students/${studentId}/details`)
-      setSelectedStudent(response.data)
-    } catch (_) {
+      const response = await api.get(`/admin/students/${studentId}/details`);
+      console.log('fetchStudentDetails response:', response.data);
+      // normalize response shape: backend may return { data: { ... } } or directly the object
+      setSelectedStudent(response.data.data || response.data);
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    console.log('selectedStudent changed:', selectedStudent);
+  }, [selectedStudent]);
+
+  // Close report dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (reportRef.current && !reportRef.current.contains(e.target)) {
+        setShowReportDropdown(false);
+      }
     }
-  }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const generateAcademicReportHtml = (
+    student,
+    courses,
+    uniName = "ESL University",
+    logoPath = "/logo.png",
+  ) => {
+    const fullName = `${student.student.user?.first_name || ""} ${student.student.user?.last_name || ""}`;
+    const studentInfo = `
+      <tr><td><strong>Nom</strong></td><td>${fullName}</td></tr>
+      <tr><td><strong>Email</strong></td><td>${student.student.user?.email || ""}</td></tr>
+      <tr><td><strong>Numéro</strong></td><td>${student.student.student_id || ""}</td></tr>
+      <tr><td><strong>Département</strong></td><td>${student.student.department?.name || ""}</td></tr>
+      <tr><td><strong>Niveau</strong></td><td>${student.student.level || ""}</td></tr>
+    `;
+
+    // Map grades by course id
+    const gradesMap = (student.student.grades || []).reduce((acc, g) => {
+      const id = g.course_id || (g.course && g.course.id)
+      if (id) acc[id] = g
+      return acc
+    }, {})
+
+    const enrolledIds = new Set((student.student.enrollments || []).map((e) => e.course_id))
+
+    const coursesRows = courses
+      .map((c) => {
+        const g = gradesMap[c.id] || null
+        const gradeCell = g ? `${g.final_grade}/100 (${g.letter_grade || ""})` : "—"
+        const semester = g?.semester || ""
+        const status = enrolledIds.has(c.id) ? "Inscrit" : "Non inscrit"
+        return `
+      <tr>
+        <td>${c.code || ""}</td>
+        <td>${c.name || ""}</td>
+        <td>${c.level || ""}</td>
+        <td>${c.credits || ""}</td>
+        <td>${semester}</td>
+        <td>${gradeCell}</td>
+        <td>${status}</td>
+      </tr>
+    `
+      })
+      .join("\n");
+
+    return `
+      <!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Rapport académique - ${fullName}</title>
+        <style>
+          body{font-family:Helvetica, Arial, sans-serif;padding:24px;color:#111}
+          .header{display:flex;align-items:center;gap:16px}
+          .logo{width:72px;height:72px;object-fit:contain}
+          h1{margin:0;font-size:20px}
+          table{width:100%;border-collapse:collapse;margin-top:16px}
+          table, th, td{border:1px solid #ddd}
+          th, td{padding:8px;text-align:left}
+          .print{position:fixed;right:20px;top:20px}
+          @media print{ .print{display:none} }
+        </style>
+      </head>
+      <body>
+        <button class="print" onclick="window.print()">Imprimer</button>
+        <div class="header">
+          <img src="${logoPath}" class="logo" alt="logo" onerror="this.style.display='none'" />
+          <div>
+            <h1>${uniName}</h1>
+            <div>Rapport académique</div>
+          </div>
+        </div>
+
+        <h2>Étudiant</h2>
+        <table>
+          ${studentInfo}
+        </table>
+
+        <h2 style="margin-top:20px">Cours de la filière (${courses.length})</h2>
+        <table>
+          <thead>
+            <tr><th>Code</th><th>Nom</th><th>Niveau</th><th>Crédits</th><th>Semestre</th><th>Note</th><th>Statut</th></tr>
+          </thead>
+          <tbody>
+            ${coursesRows}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+  };
+
+  const generateFinancialReportHtml = (
+    student,
+    payments = [],
+    uniName = "ESL University",
+    logoPath = "/logo.png",
+  ) => {
+    const fullName = `${student.student.user?.first_name || ""} ${student.student.user?.last_name || ""}`;
+
+    // Group fees by academic year
+    const fees = student.student?.fees || []
+    const byYear = {}
+    fees.forEach((f) => {
+      const year = f.academic_year || f.year || (f.created_at ? new Date(f.created_at).getFullYear() : "Unknown")
+      if (!byYear[year]) byYear[year] = { fees: [], totalDue: 0, payments: 0 }
+      byYear[year].fees.push(f)
+      const amount = f.amount || f.total || f.fee_amount || 0
+      byYear[year].totalDue += amount
+      if (f.payments && f.payments.length) {
+        f.payments.forEach((p) => {
+          const paid = p.amount || p.total || 0
+          byYear[year].payments += paid
+        })
+      }
+    })
+
+    // include standalone payments
+    payments.forEach((p) => {
+      const year = p.academic_year || (p.created_at ? new Date(p.created_at).getFullYear() : "Unknown")
+      if (!byYear[year]) byYear[year] = { fees: [], totalDue: 0, payments: 0 }
+      const paid = p.amount || p.total || 0
+      byYear[year].payments += paid
+    })
+
+    const years = Object.keys(byYear).sort()
+
+    const yearsRows = years
+      .map((y) => {
+        const entry = byYear[y]
+        const balance = (entry.totalDue || 0) - (entry.payments || 0)
+        return `
+        <tr>
+          <td>${y}</td>
+          <td>${(entry.totalDue || 0).toLocaleString()}</td>
+          <td>${(entry.payments || 0).toLocaleString()}</td>
+          <td>${balance.toLocaleString()}</td>
+        </tr>
+      `
+      })
+      .join("\n")
+
+    const paymentsRows = payments
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .map(
+        (p) => `
+      <tr>
+        <td>${new Date(p.created_at).toLocaleDateString()}</td>
+        <td>${p.academic_year || ""}</td>
+        <td>${p.payment_method || p.method || ""}</td>
+        <td>${(p.amount || p.total || 0).toLocaleString()}</td>
+        <td>${p.reference || p.txn_id || ""}</td>
+      </tr>
+    `,
+      )
+      .join("\n")
+
+    const overallBalance = student.statistics?.financial?.remaining ?? student.student?.financial_balance ?? 0
+
+    return `
+      <!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Rapport financier - ${fullName}</title>
+        <style>
+          body{font-family:Helvetica, Arial, sans-serif;padding:24px;color:#111}
+          .header{display:flex;align-items:center;gap:16px}
+          .logo{width:72px;height:72px;object-fit:contain}
+          h1{margin:0;font-size:20px}
+          table{width:100%;border-collapse:collapse;margin-top:16px}
+          table, th, td{border:1px solid #ddd}
+          th, td{padding:8px;text-align:left}
+          .print{position:fixed;right:20px;top:20px}
+          @media print{ .print{display:none} }
+        </style>
+      </head>
+      <body>
+        <button class="print" onclick="window.print()">Imprimer</button>
+        <div class="header">
+          <img src="${logoPath}" class="logo" alt="logo" onerror="this.style.display='none'" />
+          <div>
+            <h1>${uniName}</h1>
+            <div>Rapport financier</div>
+          </div>
+        </div>
+
+        <h2>Étudiant</h2>
+        <table>
+          <tr><td><strong>Nom</strong></td><td>${fullName}</td></tr>
+          <tr><td><strong>Email</strong></td><td>${student.student.user?.email || ""}</td></tr>
+          <tr><td><strong>Numéro</strong></td><td>${student.student.student_id || ""}</td></tr>
+          <tr><td><strong>Solde global</strong></td><td>${overallBalance.toLocaleString()} F</td></tr>
+        </table>
+
+        <h2 style="margin-top:20px">Bilan par année académique</h2>
+        <table>
+          <thead>
+            <tr><th>Année</th><th>Total dû</th><th>Total payé</th><th>Solde</th></tr>
+          </thead>
+          <tbody>
+            ${yearsRows || '<tr><td colspan="4">Aucun frais trouvé</td></tr>'}
+          </tbody>
+        </table>
+
+        <h2 style="margin-top:20px">Historique des paiements</h2>
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Année</th><th>Méthode</th><th>Montant</th><th>Référence</th></tr>
+          </thead>
+          <tbody>
+            ${paymentsRows || '<tr><td colspan="5">Aucun paiement trouvé</td></tr>'}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+  };
+
+  const openAcademicReport = async () => {
+    if (!selectedStudent) return alert("Sélectionnez un étudiant");
+    try {
+      const deptId = selectedStudent.student.department?.id;
+      const res = await courseApi.getAll({
+        department_id: deptId,
+        per_page: 1000,
+      });
+      const data = res.data.data || res.data;
+      const courses = data.data || data || [];
+      const html = generateAcademicReportHtml(selectedStudent, courses);
+      const w = window.open("", "_blank");
+      if (!w)
+        return alert(
+          "Impossible d'ouvrir une nouvelle fenêtre. Vérifiez le bloqueur de popups.",
+        );
+      w.document.write(html);
+      w.document.close();
+      setShowReportDropdown(false);
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de la génération du rapport");
+    }
+  };
+
+  const openFinancialReport = async () => {
+    if (!selectedStudent) return alert("Sélectionnez un étudiant");
+    try {
+      // payments may be nested in selectedStudent.student.fees -> payments
+      const payments = [];
+      const fees = selectedStudent.student?.fees || selectedStudent.fees || [];
+      fees.forEach((f) => {
+        if (f.payments) {
+          f.payments.forEach((p) => payments.push(p));
+        }
+      });
+      // fallback: selectedStudent.payments
+      if ((selectedStudent.payments || []).length > 0) {
+        (selectedStudent.payments || []).forEach((p) => payments.push(p));
+      }
+
+      const html = generateFinancialReportHtml(selectedStudent, payments);
+      const w = window.open("", "_blank");
+      if (!w)
+        return alert(
+          "Impossible d'ouvrir une nouvelle fenêtre. Vérifiez le bloqueur de popups.",
+        );
+      w.document.write(html);
+      w.document.close();
+      setShowReportDropdown(false);
+    } catch (e) {
+      console.error(e);
+      alert("Erreur lors de la génération du rapport financier");
+    }
+  };
 
   const updateGrade = async (gradeId, newGrade, reason) => {
     try {
       await api.put(`/admin/grades/${gradeId}`, {
         grade: newGrade,
         reason: reason,
-      })
-      fetchStudentDetails(selectedStudent.student.id)
-      setShowGradeModal(null)
-    } catch (_) {
-    }
-  }
+      });
+      fetchStudentDetails(selectedStudent.student.id);
+      setShowGradeModal(null);
+    } catch (_) {}
+  };
 
   const addCourse = async (courseId) => {
     try {
       await api.post(`/admin/students/${selectedStudent.student.id}/courses`, {
         course_id: courseId,
-      })
-      fetchStudentDetails(selectedStudent.student.id)
-      setShowCourseModal(false)
+      });
+      fetchStudentDetails(selectedStudent.student.id);
+      setShowCourseModal(false);
     } catch (error) {
-      alert(error.response?.data?.error || 'Erreur lors de l\'ajout du cours')
+      alert(error.response?.data?.error || "Erreur lors de l'ajout du cours");
     }
-  }
+  };
 
   const removeCourse = async (courseId) => {
-    if (!confirm('Êtes-vous sûr de vouloir retirer ce cours?')) return
-    
+    if (!confirm("Êtes-vous sûr de vouloir retirer ce cours?")) return;
+
     try {
-      await api.delete(`/admin/students/${selectedStudent.student.id}/courses/${courseId}`)
-      fetchStudentDetails(selectedStudent.student.id)
-    } catch (_) {
-    }
-  }
+      await api.delete(
+        `/admin/students/${selectedStudent.student.id}/courses/${courseId}`,
+      );
+      fetchStudentDetails(selectedStudent.student.id);
+    } catch (_) {}
+  };
 
   const GradeModificationModal = ({ grade, onClose }) => {
-    const [newGrade, setNewGrade] = useState(grade.final_grade)
-    const [reason, setReason] = useState('')
+    const [newGrade, setNewGrade] = useState(grade.final_grade);
+    const [reason, setReason] = useState("");
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -119,7 +410,10 @@ const StudentManagement = () => {
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Modifier la note
             </h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
               <XMarkIcon className="w-6 h-6" />
             </button>
           </div>
@@ -138,7 +432,9 @@ const StudentManagement = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Note actuelle
               </label>
-              <p className="text-2xl font-bold text-primary-600">{grade.final_grade}/100 ({grade.letter_grade})</p>
+              <p className="text-2xl font-bold text-primary-600">
+                {grade.final_grade}/100 ({grade.letter_grade})
+              </p>
             </div>
 
             <div>
@@ -191,8 +487,8 @@ const StudentManagement = () => {
           </div>
         </motion.div>
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -215,27 +511,33 @@ const StudentManagement = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && searchStudents()}
+              onKeyPress={(e) => e.key === "Enter" && searchStudents()}
               placeholder="Rechercher par nom, email ou numéro d'inscription..."
               className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray-100 dark:bg-dark-300 border-0 text-gray-900 dark:text-white placeholder-gray-500 focus:ring-2 focus:ring-primary-500"
             />
           </div>
-          
+
           <div className="flex gap-2">
             <select
               value={filters.department_id}
-              onChange={(e) => setFilters({ ...filters, department_id: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, department_id: e.target.value })
+              }
               className="px-4 py-3 rounded-xl bg-gray-100 dark:bg-dark-300 border-0 text-gray-900 dark:text-white"
             >
               <option value="">Tous les départements</option>
               {departments.map((dept) => (
-                <option key={dept.id} value={dept.id}>{dept.name}</option>
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
               ))}
             </select>
 
             <select
               value={filters.level}
-              onChange={(e) => setFilters({ ...filters, level: e.target.value })}
+              onChange={(e) =>
+                setFilters({ ...filters, level: e.target.value })
+              }
               className="px-4 py-3 rounded-xl bg-gray-100 dark:bg-dark-300 border-0 text-gray-900 dark:text-white"
             >
               <option value="">Tous les niveaux</option>
@@ -264,11 +566,14 @@ const StudentManagement = () => {
           <h2 className="font-semibold text-gray-900 dark:text-white">
             Résultats ({students.length})
           </h2>
-          
+
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 bg-gray-100 dark:bg-dark-200 rounded-xl animate-pulse" />
+                <div
+                  key={i}
+                  className="h-24 bg-gray-100 dark:bg-dark-200 rounded-xl animate-pulse"
+                />
               ))}
             </div>
           ) : students.length === 0 ? (
@@ -288,14 +593,15 @@ const StudentManagement = () => {
                   onClick={() => fetchStudentDetails(student.id)}
                   className={`p-4 rounded-xl cursor-pointer transition-all ${
                     selectedStudent?.student?.id === student.id
-                      ? 'bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-500'
-                      : 'bg-white dark:bg-dark-200 hover:bg-gray-50 dark:hover:bg-dark-100'
+                      ? "bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-500"
+                      : "bg-white dark:bg-dark-200 hover:bg-gray-50 dark:hover:bg-dark-100"
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
                       <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                        {student.user?.first_name?.[0]}{student.user?.last_name?.[0]}
+                        {student.user?.first_name?.[0]}
+                        {student.user?.last_name?.[0]}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -306,11 +612,13 @@ const StudentManagement = () => {
                         {student.student_id}
                       </p>
                     </div>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      student.status === 'active' 
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        student.status === "active"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                      }`}
+                    >
                       {student.level}
                     </span>
                   </div>
@@ -337,28 +645,63 @@ const StudentManagement = () => {
                     <div className="flex items-center gap-4">
                       <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center">
                         <span className="text-3xl font-bold text-white">
-                          {selectedStudent.student.user?.first_name?.[0]}{selectedStudent.student.user?.last_name?.[0]}
+                          {selectedStudent.student.user?.first_name?.[0]}
+                          {selectedStudent.student.user?.last_name?.[0]}
                         </span>
                       </div>
                       <div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {selectedStudent.student.user?.first_name} {selectedStudent.student.user?.last_name}
+                          {selectedStudent.student.user?.first_name}{" "}
+                          {selectedStudent.student.user?.last_name}
                         </h2>
                         <p className="text-gray-500 dark:text-gray-400">
                           {selectedStudent.student.student_id}
                         </p>
                         <p className="text-sm text-gray-400">
-                          {selectedStudent.student.department?.name} • {selectedStudent.student.level}
+                          {selectedStudent.student.department?.name} •{" "}
+                          {selectedStudent.student.level}
                         </p>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      selectedStudent.student.status === 'active'
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    }`}>
-                      {selectedStudent.student.status === 'active' ? 'Actif' : 'Inactif'}
-                    </span>
+                    <div className="flex items-center gap-3" ref={reportRef}>
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowReportDropdown((s) => !s)}
+                          className="px-3 py-1 rounded-md bg-gray-100 dark:bg-dark-300 text-sm text-gray-700 hover:bg-gray-200 dark:hover:bg-dark-200 transition-colors"
+                        >
+                          Rapport ▾
+                        </button>
+
+                        {showReportDropdown && (
+                          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-200 rounded-lg shadow-lg z-50">
+                            <button
+                              onClick={openAcademicReport}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-300"
+                            >
+                              Rapport académique
+                            </button>
+                            <button
+                              onClick={openFinancialReport}
+                              className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-300"
+                            >
+                              Rapport financier
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          selectedStudent.student.status === "active"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        }`}
+                      >
+                        {selectedStudent.student.status === "active"
+                          ? "Actif"
+                          : "Inactif"}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Stats */}
@@ -396,7 +739,8 @@ const StudentManagement = () => {
                         <span className="text-sm text-gray-500">Solde</span>
                       </div>
                       <p className="text-lg font-bold text-amber-600">
-                        {selectedStudent.statistics.financial.remaining.toLocaleString()} F
+                        {selectedStudent.statistics.financial.remaining.toLocaleString()}{" "}
+                        F
                       </p>
                     </div>
                   </div>
@@ -408,34 +752,42 @@ const StudentManagement = () => {
                     <ChartBarIcon className="w-5 h-5 text-primary-500" />
                     Notes
                   </h3>
-                  
+
                   <div className="space-y-3">
-                    {selectedStudent.student.grades?.slice(0, 5).map((grade) => (
-                      <div
-                        key={grade.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-300 rounded-lg"
-                      >
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {grade.course?.name}
-                          </p>
-                          <p className="text-sm text-gray-500">{grade.semester}</p>
+                    {selectedStudent.student.grades
+                      ?.slice(0, 5)
+                      .map((grade) => (
+                        <div
+                          key={grade.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-dark-300 rounded-lg"
+                        >
+                          <div>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {grade.course?.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {grade.semester}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`text-xl font-bold ${
+                                grade.final_grade >= 50
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {grade.final_grade}/100 ({grade.letter_grade})
+                            </span>
+                            <button
+                              onClick={() => setShowGradeModal(grade)}
+                              className="p-2 text-gray-500 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
+                            >
+                              <PencilIcon className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xl font-bold ${
-                            grade.final_grade >= 50 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {grade.final_grade}/100 ({grade.letter_grade})
-                          </span>
-                          <button
-                            onClick={() => setShowGradeModal(grade)}
-                            className="p-2 text-gray-500 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors"
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
 
@@ -454,7 +806,7 @@ const StudentManagement = () => {
                       Ajouter
                     </button>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {selectedStudent.student.enrollments?.map((enrollment) => (
                       <div
@@ -466,7 +818,8 @@ const StudentManagement = () => {
                             {enrollment.course?.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {enrollment.course?.code} • {enrollment.course?.credits} crédits
+                            {enrollment.course?.code} •{" "}
+                            {enrollment.course?.credits} crédits
                           </p>
                         </div>
                         <button
@@ -506,7 +859,7 @@ const StudentManagement = () => {
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default StudentManagement
+export default StudentManagement;

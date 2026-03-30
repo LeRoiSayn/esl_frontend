@@ -14,6 +14,8 @@ import {
   ArrowUpCircleIcon,
   AcademicCapIcon,
   ArrowPathIcon,
+  DocumentTextIcon,
+  PrinterIcon,
 } from '@heroicons/react/24/outline'
 
 const SEMESTER_LABELS = { '1': 'Semestre 1', '2': 'Semestre 2', '3': 'Semestre 3' }
@@ -216,6 +218,7 @@ function StudentProfileModal({ studentId, onClose, onPromoted }) {
   const [transferData, setTransferData] = useState({ course_id: '', final_grade: '', source_school: '' })
   const [transferSubmitting, setTransferSubmitting] = useState(false)
   const [allCourses, setAllCourses] = useState([])
+  const [showReportMenu, setShowReportMenu] = useState(false)
 
   const loadData = () => {
     setLoading(true)
@@ -284,6 +287,275 @@ function StudentProfileModal({ studentId, onClose, onPromoted }) {
     } finally {
       setTransferSubmitting(false)
     }
+  }
+
+  const handleAcademicReport = () => {
+    const student = data.student
+    const prog = data.academic_progress || {}
+    const years = prog.years || []
+    const summary = prog.programme_summary || {}
+    const stats = data.statistics || {}
+    const studentName = `${student.user?.first_name} ${student.user?.last_name}`
+    const printDate = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
+
+    const getMention = (n20) => {
+      if (n20 >= 16) return 'Très Bien'
+      if (n20 >= 14) return 'Bien'
+      if (n20 >= 12) return 'Assez Bien'
+      if (n20 >= 10) return 'Passable'
+      return 'Insuffisant'
+    }
+
+    let yearsHtml = ''
+    years.forEach(yearData => {
+      const yColor = yearData.is_current_year ? '#1d4ed8' : yearData.is_past_year ? '#15803d' : '#6b7280'
+      const yBg = yearData.is_current_year ? '#eff6ff' : yearData.is_past_year ? '#f0fdf4' : '#f9fafb'
+      let semsHtml = ''
+      ;(yearData.semesters || []).forEach(sem => {
+        const sColor = sem.status === 'current' ? '#2563eb' : sem.status === 'past' ? '#16a34a' : '#9ca3af'
+        const sLabel = sem.status === 'current' ? 'En cours' : sem.status === 'past' ? 'Terminé' : 'À venir'
+        const stColors = { validated: '#16a34a', enrolled: '#2563eb', failed: '#dc2626', not_enrolled: '#9ca3af' }
+        const stLabels = { validated: 'Validé', enrolled: 'En cours', failed: 'Non validé', not_enrolled: 'Non inscrit' }
+        const rows = (sem.courses || []).map(item => {
+          const { course, grade, course_status: st, enrollment } = item
+          const teacher = enrollment?.teacher
+          const teacherName = teacher ? `${teacher.first_name} ${teacher.last_name}` : '—'
+          const n100 = grade?.final_grade != null ? parseFloat(grade.final_grade) : null
+          const n20 = n100 != null ? (n100 / 5).toFixed(1) : null
+          const mention = n20 != null ? getMention(parseFloat(n20)) : '—'
+          const rowStyle = st === 'not_enrolled' ? 'color:#9ca3af;font-style:italic;' : ''
+          return `<tr style="border-bottom:1px solid #e5e7eb;${rowStyle}">
+            <td style="padding:5px 8px;font-size:11px;font-family:monospace;">${course?.code || '—'}</td>
+            <td style="padding:5px 8px;font-size:12px;">${course?.name || '—'}</td>
+            <td style="padding:5px 8px;font-size:11px;text-align:center;">${course?.credits || '—'}</td>
+            <td style="padding:5px 8px;font-size:11px;">${teacherName}</td>
+            <td style="padding:5px 8px;font-size:12px;text-align:center;font-weight:600;">${n100 != null ? n100 + '%' : '—'}</td>
+            <td style="padding:5px 8px;font-size:12px;text-align:center;font-weight:600;">${n20 != null ? n20 + '/20' : '—'}</td>
+            <td style="padding:5px 8px;font-size:11px;text-align:center;">${n20 != null ? mention : '—'}</td>
+            <td style="padding:5px 8px;font-size:11px;text-align:center;color:${stColors[st] || '#9ca3af'};font-weight:600;">${stLabels[st] || st}</td>
+          </tr>`
+        }).join('')
+        semsHtml += `<div style="margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:10px;background:#f8fafc;padding:7px 10px;border-radius:6px;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:600;color:#374151;">${sem.label}</span>
+            <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${sColor}20;color:${sColor};font-weight:600;">${sLabel}</span>
+            <span style="font-size:10px;color:#9ca3af;margin-left:auto;">${sem.stats?.validated || 0}/${sem.stats?.total || 0} validés · ${sem.stats?.credits_earned || 0}/${sem.stats?.credits_total || 0} cr.</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            <thead><tr style="background:#f1f5f9;font-size:10px;color:#6b7280;text-transform:uppercase;">
+              <th style="padding:5px 8px;text-align:left;">Code</th>
+              <th style="padding:5px 8px;text-align:left;">Intitulé</th>
+              <th style="padding:5px 8px;text-align:center;">Crédits</th>
+              <th style="padding:5px 8px;text-align:left;">Professeur</th>
+              <th style="padding:5px 8px;text-align:center;">Note/100</th>
+              <th style="padding:5px 8px;text-align:center;">/20</th>
+              <th style="padding:5px 8px;text-align:center;">Mention</th>
+              <th style="padding:5px 8px;text-align:center;">Statut</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`
+      })
+      yearsHtml += `<div style="margin-bottom:20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+        <div style="background:${yBg};padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e5e7eb;">
+          <span style="font-size:14px;font-weight:700;color:${yColor};">${yearData.year}</span>
+          <span style="font-size:13px;font-weight:600;color:#374151;">${yearData.year_label}</span>
+          <span style="font-size:10px;color:#9ca3af;margin-left:auto;">${yearData.year_stats?.validated || 0}/${yearData.year_stats?.total || 0} validés · ${yearData.year_stats?.credits_earned || 0}/${yearData.year_stats?.credits_total || 0} cr.</span>
+        </div>
+        <div style="padding:14px;">${semsHtml}</div>
+      </div>`
+    })
+
+    const totalValidated = years.reduce((s, y) => s + (y.year_stats?.validated ?? 0), 0)
+    const overallAvg = stats.overall_average != null ? (stats.overall_average / 5).toFixed(1) : null
+
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>Rapport Académique — ${studentName}</title>
+<style>
+  @page { margin: 15mm; size: A4; }
+  @media print { .no-print { display:none !important; } }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; color:#1f2937; background:#fff; }
+</style>
+</head><body style="padding:20px;">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;border-bottom:3px solid #0f766e;padding-bottom:14px;margin-bottom:18px;">
+  <div>
+    <h1 style="font-size:18px;font-weight:700;color:#0f766e;margin-bottom:3px;">École de Santé de Libreville</h1>
+    <h2 style="font-size:15px;font-weight:600;color:#374151;">Rapport Académique — Parcours Complet</h2>
+  </div>
+  <div style="text-align:right;font-size:11px;color:#6b7280;"><p>Imprimé le ${printDate}</p></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+  <div style="background:#f8fafc;border-radius:8px;padding:12px;">
+    <p style="font-size:11px;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Étudiant</p>
+    <p style="font-size:16px;font-weight:700;color:#111827;margin-bottom:2px;">${studentName}</p>
+    <p style="font-size:12px;color:#6b7280;">${student.student_id} · ${student.level || '—'}</p>
+    <p style="font-size:12px;color:#6b7280;">${student.department?.name || '—'}</p>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+    <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;">
+      <p style="font-size:10px;color:#6b7280;margin-bottom:4px;">Validés</p>
+      <p style="font-size:18px;font-weight:700;color:#16a34a;">${totalValidated}</p>
+      <p style="font-size:10px;color:#9ca3af;">/ ${summary.total_programme_courses || 0}</p>
+    </div>
+    <div style="background:#eff6ff;border-radius:8px;padding:10px;text-align:center;">
+      <p style="font-size:10px;color:#6b7280;margin-bottom:4px;">Crédits</p>
+      <p style="font-size:18px;font-weight:700;color:#2563eb;">${summary.credits_earned || 0}</p>
+      <p style="font-size:10px;color:#9ca3af;">/ ${summary.credits_total || 0}</p>
+    </div>
+    <div style="background:#faf5ff;border-radius:8px;padding:10px;text-align:center;">
+      <p style="font-size:10px;color:#6b7280;margin-bottom:4px;">Moyenne</p>
+      <p style="font-size:18px;font-weight:700;color:#7c3aed;">${overallAvg != null ? overallAvg : '—'}</p>
+      <p style="font-size:10px;color:#9ca3af;">/20</p>
+    </div>
+  </div>
+</div>
+${yearsHtml}
+<div style="margin-top:20px;padding-top:12px;border-top:1px solid #e5e7eb;text-align:center;font-size:10px;color:#9ca3af;">
+  Document généré automatiquement · École de Santé de Libreville · ${printDate}
+</div>
+</body></html>`
+
+    const pw = window.open('', '_blank')
+    pw.document.write(html)
+    pw.document.close()
+    pw.focus()
+    setTimeout(() => pw.print(), 400)
+  }
+
+  const handleFinancialReport = () => {
+    const student = data.student
+    const feesDetail = data.fees_detail || []
+    const studentName = `${student.user?.first_name} ${student.user?.last_name}`
+    const printDate = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
+
+    const fmt = (amount) => new Intl.NumberFormat('fr-FR').format(amount || 0) + ' RWF'
+    const totalAmount = feesDetail.reduce((s, f) => s + parseFloat(f.amount || 0), 0)
+    const totalPaid = feesDetail.reduce((s, f) => s + parseFloat(f.paid_amount || 0), 0)
+    const totalBalance = totalAmount - totalPaid
+
+    const allPayments = feesDetail
+      .flatMap(f => (f.payments || []).map(p => ({ ...p, fee_type_name: f.fee_type?.name || '—' })))
+      .sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date))
+
+    const regFees = feesDetail.filter(f => f.fee_type?.category === 'registration')
+    const tuitionFees = feesDetail.filter(f => f.fee_type?.category !== 'registration')
+    const tuitionByYear = {}
+    tuitionFees.forEach(f => {
+      const yr = f.academic_year || 'N/A'
+      if (!tuitionByYear[yr]) tuitionByYear[yr] = []
+      tuitionByYear[yr].push(f)
+    })
+
+    const statusLabel = (s) => s === 'paid' ? 'Payé' : s === 'partial' ? 'Partiel' : s === 'overdue' ? 'En retard' : 'Impayé'
+    const statusColor = (s) => s === 'paid' ? '#16a34a' : s === 'partial' ? '#d97706' : s === 'overdue' ? '#dc2626' : '#9ca3af'
+
+    const feeTableHead = `<table style="width:100%;border-collapse:collapse;margin-top:6px;">
+      <thead><tr style="background:#f1f5f9;font-size:10px;color:#6b7280;text-transform:uppercase;">
+        <th style="padding:5px 8px;text-align:left;">Type de frais</th>
+        <th style="padding:5px 8px;text-align:right;">Montant</th>
+        <th style="padding:5px 8px;text-align:right;">Payé</th>
+        <th style="padding:5px 8px;text-align:right;">Solde</th>
+        <th style="padding:5px 8px;text-align:center;">Statut</th>
+        <th style="padding:5px 8px;text-align:center;">Échéance</th>
+      </tr></thead><tbody>`
+
+    const feeRow = (f, i) => `<tr style="border-bottom:1px solid #e5e7eb;${i % 2 !== 0 ? 'background:#f9fafb;' : ''}">
+      <td style="padding:6px 8px;font-size:12px;">${f.fee_type?.name || '—'}</td>
+      <td style="padding:6px 8px;font-size:12px;text-align:right;">${fmt(f.amount)}</td>
+      <td style="padding:6px 8px;font-size:12px;text-align:right;color:#16a34a;font-weight:600;">${fmt(f.paid_amount)}</td>
+      <td style="padding:6px 8px;font-size:12px;text-align:right;color:${f.balance > 0 ? '#dc2626' : '#16a34a'};font-weight:600;">${fmt(f.balance)}</td>
+      <td style="padding:6px 8px;font-size:11px;text-align:center;color:${statusColor(f.status)};font-weight:600;">${statusLabel(f.status)}</td>
+      <td style="padding:6px 8px;font-size:11px;text-align:center;color:#6b7280;">${f.due_date ? new Date(f.due_date).toLocaleDateString('fr-FR') : '—'}</td>
+    </tr>`
+
+    const regSection = regFees.length > 0 ? `<div style="margin-bottom:20px;">
+      <h3 style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px;padding-left:4px;border-left:3px solid #7c3aed;">Frais d'inscription</h3>
+      ${feeTableHead}${regFees.map((f, i) => feeRow(f, i)).join('')}</tbody></table>
+    </div>` : ''
+
+    const tuitionSection = Object.keys(tuitionByYear).sort((a, b) => b.localeCompare(a)).map(yr => `
+      <div style="margin-bottom:20px;">
+        <h3 style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px;padding-left:4px;border-left:3px solid #0f766e;">Frais de scolarité — Année ${yr}</h3>
+        ${feeTableHead}${tuitionByYear[yr].map((f, i) => feeRow(f, i)).join('')}</tbody></table>
+      </div>`).join('')
+
+    const paymentRows = allPayments.map((p, i) => `<tr style="border-bottom:1px solid #e5e7eb;${i % 2 !== 0 ? 'background:#f9fafb;' : ''}">
+      <td style="padding:6px 8px;font-size:12px;">${p.payment_date ? new Date(p.payment_date).toLocaleDateString('fr-FR') : '—'}</td>
+      <td style="padding:6px 8px;font-size:11px;font-family:monospace;">${p.reference_number || '—'}</td>
+      <td style="padding:6px 8px;font-size:12px;">${p.fee_type_name}</td>
+      <td style="padding:6px 8px;font-size:12px;">${p.payment_method || '—'}</td>
+      <td style="padding:6px 8px;font-size:12px;text-align:right;font-weight:600;color:#16a34a;">${fmt(p.amount)}</td>
+    </tr>`).join('')
+
+    const paymentsSection = allPayments.length > 0 ? `<div style="margin-bottom:20px;">
+      <h3 style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px;padding-left:4px;border-left:3px solid #2563eb;">Historique des paiements</h3>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr style="background:#f1f5f9;font-size:10px;color:#6b7280;text-transform:uppercase;">
+          <th style="padding:5px 8px;text-align:left;">Date</th>
+          <th style="padding:5px 8px;text-align:left;">Référence</th>
+          <th style="padding:5px 8px;text-align:left;">Type de frais</th>
+          <th style="padding:5px 8px;text-align:left;">Méthode</th>
+          <th style="padding:5px 8px;text-align:right;">Montant</th>
+        </tr></thead>
+        <tbody>${paymentRows}</tbody>
+      </table>
+    </div>` : '<p style="color:#9ca3af;font-size:12px;text-align:center;padding:20px 0;">Aucun paiement enregistré.</p>'
+
+    const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>Rapport Financier — ${studentName}</title>
+<style>
+  @page { margin: 15mm; size: A4; }
+  @media print { .no-print { display:none !important; } }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; color:#1f2937; background:#fff; }
+</style>
+</head><body style="padding:20px;">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;border-bottom:3px solid #0f766e;padding-bottom:14px;margin-bottom:18px;">
+  <div>
+    <h1 style="font-size:18px;font-weight:700;color:#0f766e;margin-bottom:3px;">École de Santé de Libreville</h1>
+    <h2 style="font-size:15px;font-weight:600;color:#374151;">Rapport Financier — Bilan des Frais</h2>
+  </div>
+  <div style="text-align:right;font-size:11px;color:#6b7280;">
+    <p>Imprimé le ${printDate}</p>
+    <p style="margin-top:2px;font-weight:600;color:#dc2626;">CONFIDENTIEL</p>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+  <div style="background:#f8fafc;border-radius:8px;padding:12px;">
+    <p style="font-size:11px;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Étudiant</p>
+    <p style="font-size:16px;font-weight:700;color:#111827;margin-bottom:2px;">${studentName}</p>
+    <p style="font-size:12px;color:#6b7280;">${student.student_id} · ${student.level || '—'}</p>
+    <p style="font-size:12px;color:#6b7280;">${student.department?.name || '—'}</p>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+    <div style="background:#f8fafc;border-radius:8px;padding:10px;text-align:center;border:1px solid #e5e7eb;">
+      <p style="font-size:10px;color:#6b7280;margin-bottom:4px;">Total frais</p>
+      <p style="font-size:13px;font-weight:700;color:#1f2937;">${fmt(totalAmount)}</p>
+    </div>
+    <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;border:1px solid #bbf7d0;">
+      <p style="font-size:10px;color:#6b7280;margin-bottom:4px;">Total payé</p>
+      <p style="font-size:13px;font-weight:700;color:#16a34a;">${fmt(totalPaid)}</p>
+    </div>
+    <div style="background:${totalBalance > 0 ? '#fef2f2' : '#f0fdf4'};border-radius:8px;padding:10px;text-align:center;border:1px solid ${totalBalance > 0 ? '#fecaca' : '#bbf7d0'};">
+      <p style="font-size:10px;color:#6b7280;margin-bottom:4px;">Solde restant</p>
+      <p style="font-size:13px;font-weight:700;color:${totalBalance > 0 ? '#dc2626' : '#16a34a'};">${fmt(totalBalance)}</p>
+    </div>
+  </div>
+</div>
+${regSection}
+${tuitionSection}
+${paymentsSection}
+<div style="margin-top:20px;padding-top:12px;border-top:1px solid #e5e7eb;text-align:center;font-size:10px;color:#9ca3af;">
+  Document confidentiel · École de Santé de Libreville · ${printDate}
+</div>
+</body></html>`
+
+    const pw = window.open('', '_blank')
+    pw.document.write(html)
+    pw.document.close()
+    pw.focus()
+    setTimeout(() => pw.print(), 400)
   }
 
   if (loading) {

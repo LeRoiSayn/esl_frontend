@@ -19,6 +19,7 @@ import AdminEnrollment from './pages/admin/Enrollment'
 import AdminReports from './pages/admin/Reports'
 import AdminActivityLog from './pages/admin/ActivityLog'
 import AdminGrades from './pages/admin/Grades'
+  import AdminStudentReport from './pages/admin/StudentReport'
 import AdminStudentManagement from './pages/admin/StudentManagement'
 import UnifiedStudentManagement from './pages/admin/UnifiedStudentManagement'
 import UnifiedTeacherManagement from './pages/admin/UnifiedTeacherManagement'
@@ -131,6 +132,7 @@ function App() {
           <Route path="teachers" element={<AdminTeachers />} />
           <Route path="enrollment" element={<AdminEnrollment />} />
           <Route path="student-management" element={<UnifiedStudentManagement />} />
+          <Route path="student-management/:id/report" element={<AdminStudentReport />} />
           <Route path="teacher-management" element={<UnifiedTeacherManagement />} />
           <Route path="schedules" element={<AdminSchedules />} />
           <Route path="reports" element={<AdminReports />} />

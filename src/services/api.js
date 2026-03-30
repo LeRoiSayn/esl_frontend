@@ -233,6 +233,15 @@ export const chatbotApi = {
 export const adminApi = {
   searchStudents: (params) => api.get("/admin/students/search", { params }),
   getStudentDetails: (id) => api.get(`/admin/students/${id}/details`),
+  getStudentReport: (id) => api.get(`/admin/students/${id}/report`),
+  getStudentAcademicSheet: (id) =>
+    api.get(`/admin/students/${id}/report/sheet/academic`, { responseType: "blob" }),
+  downloadStudentAcademicSheet: (id) =>
+    api.get(`/admin/students/${id}/report/download/academic`, { responseType: "blob" }),
+  getStudentFinancialSheet: (id) =>
+    api.get(`/admin/students/${id}/report/sheet/financial`, { responseType: "blob" }),
+  downloadStudentFinancialSheet: (id) =>
+    api.get(`/admin/students/${id}/report/download/financial`, { responseType: "blob" }),
   updateGrade: (gradeId, data) => api.put(`/admin/grades/${gradeId}`, data),
   getGradeHistory: (gradeId) => api.get(`/admin/grades/${gradeId}/history`),
   validateClassGrades: (classId) => api.post(`/admin/grades/validate-class/${classId}`),
