@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { ArrowLeftIcon, PrinterIcon } from '@heroicons/react/24/outline'
 import { adminApi } from '../../services/api'
 import { DocumentArrowDownIcon } from '@heroicons/react/24/outline'
+import { LOGO_URL } from '../../utils/reportPrint'
 
 function formatMoney(amount) {
   const n = Number(amount || 0)
@@ -91,13 +92,24 @@ export default function AdminStudentReport() {
     <div className="space-y-4">
       {/* Print styles */}
       <style>{`
+        .print-only { display: none !important; }
         @media print {
           .no-print { display: none !important; }
+          .print-only { display: flex !important; }
           body { background: white !important; }
           .page-break { page-break-before: always; }
           .print-card { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
         }
       `}</style>
+
+      {/* ESL header — visible only when printing */}
+      <div className="print-only" style={{ alignItems: 'center', gap: 12, borderBottom: '2px solid #e5e7eb', paddingBottom: 12, marginBottom: 16 }}>
+        <img src={LOGO_URL} alt="ESL" style={{ width: 56, height: 56, objectFit: 'contain' }} onError={(e) => { e.currentTarget.style.display = 'none' }} />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>École de Santé de Libreville</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#269c6d', marginTop: 2 }}>Rapport Académique — {student.full_name}</div>
+        </div>
+      </div>
 
       {/* Header actions */}
       <div className="no-print flex items-center justify-between">

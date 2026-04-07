@@ -13,8 +13,19 @@ import {
   ClockIcon,
   UserGroupIcon,
   CheckCircleIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline'
-import api from '../services/api'
+import api, { notificationApi } from '../services/api'
+
+const DISMISSED_KEY = 'esl_dismissed_notifications'
+
+function loadDismissed() {
+  try { return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) || '[]')) }
+  catch { return new Set() }
+}
+function saveDismissed(set) {
+  localStorage.setItem(DISMISSED_KEY, JSON.stringify([...set]))
+}
 
 const iconMap = {
   currency: CurrencyDollarIcon,
@@ -47,6 +58,8 @@ export default function NotificationDropdown({ t: tProp }) {
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [dismissed, setDismissed] = useState(loadDismissed)
+  const [deleting, setDeleting] = useState(null)
   const dropdownRef = useRef(null)
 
   // Close when clicking outside
@@ -70,7 +83,7 @@ export default function NotificationDropdown({ t: tProp }) {
   // Fetch on mount (delayed 1.5s so the dashboard data loads first) and periodically
   useEffect(() => {
     const initial = setTimeout(fetchNotifications, 1500)
-    const interval = setInterval(fetchNotifications, 60000) // Every 60 seconds
+    const interval = setInterval(fetchNotifications, 60000)
     return () => { clearTimeout(initial); clearInterval(interval) }
   }, [])
 
@@ -80,11 +93,46 @@ export default function NotificationDropdown({ t: tProp }) {
       const response = await api.get('/notifications')
       setNotifications(response.data.notifications || [])
       setUnreadCount(response.data.unread_count || 0)
-    } catch (error) {
+    } catch {
       // silent
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation()
+    setDeleting(id)
+    try {
+      // If it's a DB notification (id like "notif_123"), call the API
+      if (String(id).startsWith('notif_')) {
+        const numericId = String(id).replace('notif_', '')
+        await notificationApi.deleteOne(numericId)
+      }
+      // Always dismiss locally
+      const next = new Set(dismissed)
+      next.add(id)
+      setDismissed(next)
+      saveDismissed(next)
+    } catch {
+      // silent
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const handleDeleteAll = async () => {
+    try {
+      // Delete all DB notifications
+      await notificationApi.deleteAll()
+    } catch {
+      // silent — still dismiss locally
+    }
+    // Dismiss everything currently visible
+    const next = new Set(dismissed)
+    notifications.forEach(n => next.add(n.id))
+    setDismissed(next)
+    saveDismissed(next)
   }
 
   const formatTimeAgo = (dateStr) => {
@@ -99,6 +147,9 @@ export default function NotificationDropdown({ t: tProp }) {
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
   }
 
+  const visible = notifications.filter(n => !dismissed.has(n.id))
+  const visibleUnread = visible.filter(n => !n.read).length
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
@@ -108,13 +159,13 @@ export default function NotificationDropdown({ t: tProp }) {
         title={t?.('notifications') || 'Notifications'}
       >
         <BellIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        {unreadCount > 0 && (
+        {visibleUnread > 0 && (
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             className="absolute top-1 right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1"
           >
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {visibleUnread > 9 ? '9+' : visibleUnread}
           </motion.span>
         )}
       </button>
@@ -136,28 +187,40 @@ export default function NotificationDropdown({ t: tProp }) {
                 <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                   {t?.('notifications') || 'Notifications'}
                 </h3>
-                {unreadCount > 0 && (
+                {visibleUnread > 0 && (
                   <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs font-medium rounded-full">
-                    {unreadCount}
+                    {visibleUnread}
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-100 transition-colors"
-              >
-                <XMarkIcon className="w-4 h-4 text-gray-500" />
-              </button>
+              <div className="flex items-center gap-1">
+                {visible.length > 0 && (
+                  <button
+                    onClick={handleDeleteAll}
+                    title="Tout supprimer"
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                  >
+                    <TrashIcon className="w-3.5 h-3.5" />
+                    <span>Tout effacer</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-dark-100 transition-colors"
+                >
+                  <XMarkIcon className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
             </div>
 
             {/* Notification List */}
             <div className="overflow-y-auto max-h-[420px]">
-              {loading && notifications.length === 0 ? (
+              {loading && visible.length === 0 ? (
                 <div className="p-8 text-center">
                   <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                   <p className="text-sm text-gray-500">{t?.('loading') || 'Chargement...'}</p>
                 </div>
-              ) : notifications.length === 0 ? (
+              ) : visible.length === 0 ? (
                 <div className="p-8 text-center">
                   <BellIcon className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -169,47 +232,61 @@ export default function NotificationDropdown({ t: tProp }) {
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100 dark:divide-dark-100">
-                  {notifications.map((notification) => {
-                    const IconComponent = iconMap[notification.icon] || BellIcon
-                    const colorClass = priorityColors[notification.priority] || priorityColors.low
-                    const iconColorClass = priorityIconColors[notification.priority] || priorityIconColors.low
+                  <AnimatePresence initial={false}>
+                    {visible.map((notification) => {
+                      const IconComponent = iconMap[notification.icon] || BellIcon
+                      const colorClass = priorityColors[notification.priority] || priorityColors.low
+                      const iconColorClass = priorityIconColors[notification.priority] || priorityIconColors.low
+                      const isDeleting = deleting === notification.id
 
-                    return (
-                      <motion.div
-                        key={notification.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className={`px-4 py-3 border-l-4 hover:bg-gray-50 dark:hover:bg-dark-300/50 transition-colors cursor-default ${colorClass} ${
-                          notification.read ? 'opacity-70' : ''
-                        }`}
-                      >
-                        <div className="flex gap-3">
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconColorClass}`}>
-                            <IconComponent className="w-4.5 h-4.5" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="font-medium text-sm text-gray-900 dark:text-white leading-tight">
-                                {notification.title}
-                              </p>
-                              <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap mt-0.5">
-                                {formatTimeAgo(notification.date)}
-                              </span>
+                      return (
+                        <motion.div
+                          key={notification.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: isDeleting ? 0.4 : 1, x: 0 }}
+                          exit={{ opacity: 0, x: 40, height: 0, paddingTop: 0, paddingBottom: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className={`group relative px-4 py-3 border-l-4 hover:bg-gray-50 dark:hover:bg-dark-300/50 transition-colors cursor-default ${colorClass} ${
+                            notification.read ? 'opacity-70' : ''
+                          }`}
+                        >
+                          <div className="flex gap-3">
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconColorClass}`}>
+                              <IconComponent className="w-4.5 h-4.5" />
                             </div>
-                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
-                              {notification.message}
-                            </p>
+                            <div className="flex-1 min-w-0 pr-7">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="font-medium text-sm text-gray-900 dark:text-white leading-tight">
+                                  {notification.title}
+                                </p>
+                                <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap mt-0.5">
+                                  {formatTimeAgo(notification.date)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
+                                {notification.message}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    )
-                  })}
+                          {/* Delete button — visible on hover */}
+                          <button
+                            onClick={(e) => handleDelete(e, notification.id)}
+                            disabled={isDeleting}
+                            title="Supprimer"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </motion.div>
+                      )
+                    })}
+                  </AnimatePresence>
                 </div>
               )}
             </div>
 
             {/* Footer */}
-            {notifications.length > 0 && (
+            {visible.length > 0 && (
               <div className="px-4 py-2.5 border-t border-gray-200 dark:border-dark-100 bg-gray-50 dark:bg-dark-300">
                 <button
                   onClick={fetchNotifications}

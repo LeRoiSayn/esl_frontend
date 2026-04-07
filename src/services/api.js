@@ -310,6 +310,8 @@ export const registrarApi = {
 // Notification API
 export const notificationApi = {
   getAll: () => api.get("/notifications"),
+  deleteOne: (id) => api.delete(`/notifications/${id}`),
+  deleteAll: () => api.delete("/notifications/all"),
 };
 
 export default api;
