@@ -70,7 +70,6 @@ export default function RegistrarReports() {
         const users = byRole[role]
         if (!users.length) return ''
         const rows = users.map(u => {
-          const user = role === 'teacher' ? (u.user || u) : (role === 'student' ? (u.user || u) : u)
           const fn = esc(u.user?.first_name || u.first_name || '')
           const ln = esc(u.user?.last_name || u.last_name || '')
           const email = esc(u.user?.email || u.email || '—')
@@ -84,9 +83,7 @@ export default function RegistrarReports() {
             <td style="text-align:center"><span class="badge ${stCls}">${status}</span></td>
           </tr>`
         }).join('')
-        return `<div class="level-title" style="color:#6d28d9;background:#f5f3ff;border-left-color:#7c3aed">
-            ${ROLE_LABELS[role]} (${users.length})
-          </div>
+        return `<div class="level-title">${ROLE_LABELS[role]} (${users.length})</div>
           <table><thead><tr><th>Nom Complet</th><th>Email</th><th>ID</th><th style="text-align:center">Statut</th></tr></thead>
           <tbody>${rows}</tbody></table>`
       }).join('')
@@ -95,7 +92,7 @@ export default function RegistrarReports() {
       const summary = ROLES.map(r => `${ROLE_LABELS[r]}: <strong>${byRole[r].length}</strong>`).join(' &nbsp;·&nbsp; ')
 
       const body = `
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#374151">
+        <div class="info-box">
           Total utilisateurs : <strong>${total}</strong> &nbsp;—&nbsp; ${summary}
         </div>
         ${sections}`
@@ -157,7 +154,7 @@ export default function RegistrarReports() {
       }).join('')
 
       const body = `
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px">
+        <div class="info-box">
           Total : <strong>${students.length} étudiant${students.length > 1 ? 's' : ''}</strong> &nbsp;·&nbsp;
           ${sortedLevels.map(l => `${l}: ${grouped[l].length}`).join(' &nbsp;·&nbsp; ')}
         </div>
@@ -215,7 +212,7 @@ export default function RegistrarReports() {
       }).join('')
 
       const body = `
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px">
+        <div class="info-box">
           Total : <strong>${teachers.length} enseignant${teachers.length > 1 ? 's' : ''}</strong> dans
           <strong>${Object.keys(byFaculty).length} faculté${Object.keys(byFaculty).length > 1 ? 's' : ''}</strong>
         </div>

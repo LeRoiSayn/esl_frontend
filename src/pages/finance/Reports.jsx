@@ -54,11 +54,11 @@ export default function FinanceReports() {
       const monthly = stats.monthly_trends || []
       const byType = stats.revenue_by_type || stats.revenue_by_fee_type || []
 
-      const kpi = `<div class="kpi-grid">
-        <div class="kpi"><div class="lbl">Revenus Totaux</div><div class="val" style="color:#15803d">${fmtRwf(stats.total_revenue)}</div></div>
-        <div class="kpi"><div class="lbl">Frais en Attente</div><div class="val" style="color:#b91c1c">${fmtRwf(stats.pending_fees)}</div></div>
-        <div class="kpi"><div class="lbl">Collecte du Jour</div><div class="val" style="color:#1d4ed8">${fmtRwf(stats.today_collection)}</div></div>
-        <div class="kpi"><div class="lbl">Revenus du Mois</div><div class="val" style="color:#7c3aed">${fmtRwf(stats.monthly_revenue)}</div></div>
+      const kpi = `<div class="summary-row">
+        <div class="summary-cell"><div class="summary-lbl">Revenus Totaux</div><div class="summary-val" style="color:#15803d">${fmtRwf(stats.total_revenue)}</div></div>
+        <div class="summary-cell"><div class="summary-lbl">Frais en Attente</div><div class="summary-val" style="color:#b91c1c">${fmtRwf(stats.pending_fees)}</div></div>
+        <div class="summary-cell"><div class="summary-lbl">Collecte du Jour</div><div class="summary-val" style="color:#1d4ed8">${fmtRwf(stats.today_collection)}</div></div>
+        <div class="summary-cell"><div class="summary-lbl">Revenus du Mois</div><div class="summary-val" style="color:#269c6d">${fmtRwf(stats.monthly_revenue)}</div></div>
       </div>`
 
       const monthlyRows = monthly.length

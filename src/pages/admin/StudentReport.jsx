@@ -189,7 +189,7 @@ export default function AdminStudentReport() {
 
       {/* Document 2: Financial Report */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card p-6 print-card">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 pb-4 border-b border-gray-200 dark:border-dark-100">
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Student Financial Report</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -202,60 +202,98 @@ export default function AdminStudentReport() {
           </div>
         </div>
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-5 space-y-5">
           {(report.finance?.years || []).length === 0 ? (
             <div className="text-sm text-gray-500">No financial data.</div>
           ) : (
             report.finance.years.map((y) => (
-              <div key={y.academic_year} className="border border-gray-200 dark:border-dark-100 rounded-xl overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 dark:bg-dark-300 flex items-center justify-between">
-                  <div className="font-semibold">{y.academic_year}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-300">
-                    Total: {formatMoney(y.summary.total)} • Paid: {formatMoney(y.summary.paid)} • Balance: {formatMoney(y.summary.balance)}
+              <div key={y.academic_year} className="border border-gray-200 dark:border-dark-100 rounded-lg overflow-hidden">
+                {/* Year header with title */}
+                <div className="px-4 py-3 bg-gray-50 dark:bg-dark-300 border-b border-gray-200 dark:border-dark-100">
+                  <div className="font-semibold text-gray-900 dark:text-white">{y.academic_year}</div>
+                </div>
+                {/* Summary strip */}
+                <div className="grid grid-cols-3 divide-x divide-gray-200 dark:divide-dark-100 border-b border-gray-200 dark:border-dark-100">
+                  <div className="px-4 py-2.5">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-400">Total dû</div>
+                    <div className="font-semibold text-sm text-gray-900 dark:text-white mt-0.5">{formatMoney(y.summary.total)}</div>
+                  </div>
+                  <div className="px-4 py-2.5">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-400">Payé</div>
+                    <div className="font-semibold text-sm text-green-600 mt-0.5">{formatMoney(y.summary.paid)}</div>
+                  </div>
+                  <div className="px-4 py-2.5">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-400">Solde restant</div>
+                    <div className={`font-semibold text-sm mt-0.5 ${Number(y.summary.balance) > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatMoney(y.summary.balance)}</div>
                   </div>
                 </div>
 
+                {/* Fees table */}
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="bg-white dark:bg-dark-200">
-                      <tr className="text-left text-gray-500">
-                        <th className="px-4 py-2">Fee</th>
-                        <th className="px-4 py-2">Amount</th>
-                        <th className="px-4 py-2">Paid</th>
-                        <th className="px-4 py-2">Balance</th>
-                        <th className="px-4 py-2">Due</th>
-                        <th className="px-4 py-2">Status</th>
+                      <tr className="text-left text-gray-500 text-xs border-b border-gray-100 dark:border-dark-100">
+                        <th className="px-4 py-2 font-medium">Frais</th>
+                        <th className="px-4 py-2 font-medium text-right">Montant</th>
+                        <th className="px-4 py-2 font-medium text-right">Payé</th>
+                        <th className="px-4 py-2 font-medium text-right">Solde</th>
+                        <th className="px-4 py-2 font-medium">Échéance</th>
+                        <th className="px-4 py-2 font-medium">Statut</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-dark-100">
-                      {y.fees.map((f) => (
-                        <tr key={f.id} className="text-gray-700 dark:text-gray-200">
-                          <td className="px-4 py-2">{f.fee_type}</td>
-                          <td className="px-4 py-2">{formatMoney(f.amount)}</td>
-                          <td className="px-4 py-2">{formatMoney(f.paid)}</td>
-                          <td className="px-4 py-2">{formatMoney(f.balance)}</td>
-                          <td className="px-4 py-2">{f.due_date || '—'}</td>
-                          <td className="px-4 py-2">{f.status}</td>
-                        </tr>
-                      ))}
+                      {y.fees.map((f) => {
+                        const isPaid = f.status === 'paid'
+                        const isPartial = f.status === 'partial'
+                        return (
+                          <tr key={f.id} className="text-gray-700 dark:text-gray-200">
+                            <td className="px-4 py-2">{f.fee_type}</td>
+                            <td className="px-4 py-2 text-right tabular-nums">{formatMoney(f.amount)}</td>
+                            <td className="px-4 py-2 text-right tabular-nums text-green-600">{formatMoney(f.paid)}</td>
+                            <td className={`px-4 py-2 text-right tabular-nums font-medium ${Number(f.balance) > 0 ? 'text-red-600' : 'text-green-600'}`}>{formatMoney(f.balance)}</td>
+                            <td className="px-4 py-2 text-gray-500">{f.due_date || '—'}</td>
+                            <td className="px-4 py-2">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                                isPaid ? 'bg-green-50 text-green-700 border-green-200' :
+                                isPartial ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                'bg-red-50 text-red-700 border-red-200'
+                              }`}>
+                                {isPaid ? 'Payé' : isPartial ? 'Partiel' : f.status}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
 
-                {/* Optional: list of payment transactions (student online payments) */}
+                {/* Payment transactions */}
                 {(y.transactions || []).length > 0 && (
-                  <div className="p-4 border-t border-gray-200 dark:border-dark-100">
-                    <div className="font-medium text-sm mb-2">Online Transactions</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                      {y.transactions.map((tx) => (
-                        <div key={tx.id} className="flex items-center justify-between gap-4">
-                          <span className="font-mono">{tx.reference}</span>
-                          <span>{tx.payment_method}</span>
-                          <span>{formatMoney(tx.amount)}</span>
-                          <span className="text-gray-400">{formatDate(tx.created_at)}</span>
-                        </div>
-                      ))}
+                  <div className="border-t border-gray-200 dark:border-dark-100">
+                    <div className="px-4 py-2 bg-gray-50 dark:bg-dark-300 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Transactions enregistrées
                     </div>
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-white dark:bg-dark-200">
+                        <tr className="text-left text-gray-500 text-xs border-b border-gray-100 dark:border-dark-100">
+                          <th className="px-4 py-2 font-medium">Référence</th>
+                          <th className="px-4 py-2 font-medium">Méthode</th>
+                          <th className="px-4 py-2 font-medium text-right">Montant</th>
+                          <th className="px-4 py-2 font-medium">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-dark-100">
+                        {y.transactions.map((tx) => (
+                          <tr key={tx.id} className="text-gray-700 dark:text-gray-200">
+                            <td className="px-4 py-2 font-mono text-xs">{tx.reference}</td>
+                            <td className="px-4 py-2 text-gray-500">{tx.payment_method}</td>
+                            <td className="px-4 py-2 text-right tabular-nums text-green-600 font-medium">{formatMoney(tx.amount)}</td>
+                            <td className="px-4 py-2 text-gray-400 text-xs">{formatDate(tx.created_at)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>

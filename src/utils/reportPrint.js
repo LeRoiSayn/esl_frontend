@@ -18,46 +18,63 @@ export const fmtDate = () =>
 export const BASE_STYLES = `
   @page { margin: 15mm; size: A4; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; background: #f3f4f6; font-size: 12px; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #111827; background: #f3f4f6; font-size: 12px; }
   .toolbar {
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-    background: #1e3a8a; color: white;
+    background: #111827; color: white;
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 24px; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.25);
   }
   .toolbar-title { font-size: 14px; font-weight: 600; }
-  .toolbar-sub { font-size: 11px; opacity: .75; margin-top: 1px; }
+  .toolbar-sub { font-size: 11px; opacity: .7; margin-top: 1px; }
   .toolbar-btn {
     display: flex; align-items: center; gap: 7px;
-    padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer;
+    padding: 8px 18px; border-radius: 6px; border: none; cursor: pointer;
     font-size: 13px; font-weight: 600; transition: background .15s;
   }
   .btn-print { background: #269c6d; color: white; }
   .btn-print:hover { background: #1a7a55; }
   .btn-close { background: rgba(255,255,255,.15); color: white; }
   .btn-close:hover { background: rgba(255,255,255,.25); }
-  .page { background: #fff; max-width: 860px; margin: 68px auto 32px; padding: 28px 32px; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.12); }
-  .hdr { display: flex; align-items: flex-start; justify-content: space-between; border-bottom: 3px solid #269c6d; padding-bottom: 12px; margin-bottom: 18px; }
-  .hdr-title { font-size: 18px; font-weight: 700; color: #269c6d; }
-  .hdr-sub { font-size: 13px; color: #374151; margin-top: 3px; }
+  .page { background: #fff; max-width: 860px; margin: 68px auto 32px; padding: 28px 32px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  /* Document header — university name left, date right */
+  .hdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 14px; margin-bottom: 18px; }
+  .hdr-title { font-size: 15px; font-weight: 700; color: #111827; }
+  .hdr-doc { font-size: 12px; font-weight: 700; color: #269c6d; margin-top: 3px; }
+  .hdr-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
   .hdr-date { font-size: 10px; color: #6b7280; text-align: right; white-space: nowrap; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-  .kpi { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; text-align: center; }
-  .kpi .lbl { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; }
-  .kpi .val { font-size: 15px; font-weight: 700; margin-top: 4px; }
-  .sec-title { font-size: 11px; font-weight: 700; color: #1e3a8a; background: #dbeafe; padding: 5px 10px; border-radius: 4px; margin: 14px 0 7px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .level-title { font-size: 12px; font-weight: 700; color: #1e40af; background: #eff6ff; border-left: 4px solid #3b82f6; padding: 6px 10px; margin: 16px 0 6px; }
-  .faculty-title { font-size: 13px; font-weight: 700; color: #7c3aed; background: #f5f3ff; padding: 7px 12px; border-radius: 6px; margin: 18px 0 8px; }
-  .dept-title { font-size: 11px; font-weight: 600; color: #374151; background: #f1f5f9; padding: 5px 10px; border-left: 3px solid #64748b; margin: 10px 0 5px; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
-  th { background: #1e3a8a; color: white; padding: 6px 8px; text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; }
-  td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; font-size: 11px; }
+  /* Section headings — clean, no coloured backgrounds */
+  .section-title { margin: 18px 0 10px; font-size: 13px; font-weight: 800; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+  .sec-title { margin: 14px 0 7px; font-size: 11px; font-weight: 700; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+  /* Group/level/faculty labels */
+  .level-title { font-size: 12px; font-weight: 700; color: #111827; border-left: 3px solid #269c6d; padding: 4px 10px; margin: 14px 0 6px; }
+  .faculty-title { font-size: 13px; font-weight: 700; color: #111827; border-left: 4px solid #269c6d; padding: 5px 10px; background: #f9fafb; margin: 18px 0 8px; }
+  .dept-title { font-size: 11px; font-weight: 600; color: #374151; border-left: 2px solid #9ca3af; padding: 3px 8px; margin: 10px 0 5px; }
+  /* Tables — clean, like the academic sheet */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
+  th { background: #f9fafb; color: #111827; padding: 7px 8px; text-align: left; font-size: 10px; font-weight: 700; border: 1px solid #e5e7eb; }
+  td { padding: 6px 8px; border: 1px solid #e5e7eb; font-size: 11px; color: #111827; background: #fff; }
   tr:nth-child(even) td { background: #f9fafb; }
-  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 9px; font-weight: 700; }
-  .g { background: #dcfce7; color: #15803d; }
-  .y { background: #fef9c3; color: #a16207; }
-  .r { background: #fee2e2; color: #b91c1c; }
-  .b { background: #dbeafe; color: #1d4ed8; }
+  /* Status pills — border style (no solid-colour badges) */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; border: 1px solid; }
+  .g { background: #f0fdf4; color: #15803d; border-color: #86efac; }
+  .y { background: #fefce8; color: #a16207; border-color: #fde047; }
+  .r { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+  .b { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+  /* Summary strip (replaces the KPI-grid) */
+  .summary-row { display: flex; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; margin-bottom: 16px; }
+  .summary-cell { flex: 1; padding: 10px 14px; border-right: 1px solid #e5e7eb; }
+  .summary-cell:last-child { border-right: none; }
+  .summary-lbl { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: .06em; }
+  .summary-val { font-size: 14px; font-weight: 700; margin-top: 3px; }
+  /* Year box (per-year financial sections) */
+  .year-box { border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+  .year-hdr { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+  .year-title { font-size: 13px; font-weight: 700; color: #111827; }
+  .year-summary { display: flex; gap: 20px; font-size: 11px; color: #374151; }
+  .year-body { padding: 0; }
+  /* Generic info box */
+  .info-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 11px; color: #374151; }
   .footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 9px; color: #9ca3af; }
   @media print {
     body { background: #fff; }
@@ -95,7 +112,7 @@ export function openReport(title, subtitle, body) {
   <div class="hdr">
     <div>
       <div class="hdr-title">École de Santé de Libreville</div>
-      <div class="hdr-sub">${esc(subtitle)}</div>
+      <div class="hdr-doc">${esc(subtitle)}</div>
     </div>
     <div class="hdr-date">Généré le ${date}</div>
   </div>

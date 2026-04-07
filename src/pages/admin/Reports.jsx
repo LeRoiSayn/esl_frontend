@@ -114,7 +114,7 @@ export default function AdminReports() {
       }).join('')
 
       const body = `
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px">
+        <div class="info-box">
           Total : <strong>${classes.length} classe${classes.length > 1 ? 's' : ''}</strong> sur <strong>${Object.keys(byYear).length} année${Object.keys(byYear).length > 1 ? 's' : ''}</strong>
         </div>
         ${sections}`
@@ -172,7 +172,7 @@ export default function AdminReports() {
       }).join('')
 
       const body = `
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px">
+        <div class="info-box">
           Total : <strong>${teachers.length} enseignant${teachers.length > 1 ? 's' : ''}</strong>
           dans <strong>${Object.keys(byFaculty).length} faculté${Object.keys(byFaculty).length > 1 ? 's' : ''}</strong>
         </div>
@@ -192,7 +192,7 @@ export default function AdminReports() {
   const handleCourses = async () => {
     setLoadingCourses(true)
     try {
-      const [coursesRes, deptsRes] = await Promise.all([
+      const [coursesRes] = await Promise.all([
         courseApi.getAll({ per_page: 2000 }),
         departmentApi.getAll({ per_page: 200 }),
       ])
@@ -234,7 +234,7 @@ export default function AdminReports() {
       }).join('')
 
       const body = `
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:11px">
+        <div class="info-box">
           Total : <strong>${courses.length} cours</strong> dans <strong>${Object.keys(byDept).length} département${Object.keys(byDept).length > 1 ? 's' : ''}</strong>
           &nbsp;·&nbsp; Actifs : <strong>${courses.filter(c => c.is_active).length}</strong>
         </div>
