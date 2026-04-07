@@ -9,6 +9,11 @@ export const esc = (val) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 
+// Derive backend root from VITE_API_URL (strips /api suffix if present)
+const _apiRoot = (import.meta.env.VITE_API_URL || '').trim().replace(/\/$/, '')
+const _backendRoot = _apiRoot ? _apiRoot.replace(/\/api\/?$/, '') : ''
+export const LOGO_URL = _backendRoot ? `${_backendRoot}/esl-logo.png` : '/esl-logo.png'
+
 export const fmtRwf = (amount) =>
   new Intl.NumberFormat('fr-FR').format(Math.round(amount || 0)) + ' RWF'
 
@@ -89,13 +94,17 @@ export const BASE_STYLES = `
  */
 export function openReport(title, subtitle, body) {
   const date = fmtDate()
+  const logoSrc = esc(LOGO_URL)
   const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
 <title>${esc(title)}</title><style>${BASE_STYLES}</style>
 </head><body>
 <div class="toolbar no-print">
-  <div>
-    <div class="toolbar-title">${esc(title)}</div>
-    <div class="toolbar-sub">École de Santé de Libreville &nbsp;·&nbsp; ${date}</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <img src="${logoSrc}" alt="" style="width:32px;height:32px;object-fit:contain;opacity:.85" onerror="this.style.display='none'">
+    <div>
+      <div class="toolbar-title">${esc(title)}</div>
+      <div class="toolbar-sub">École de Santé de Libreville &nbsp;·&nbsp; ${date}</div>
+    </div>
   </div>
   <div style="display:flex;gap:8px">
     <button class="toolbar-btn btn-print" onclick="window.print()">
@@ -110,9 +119,12 @@ export function openReport(title, subtitle, body) {
 </div>
 <div class="page">
   <div class="hdr">
-    <div>
-      <div class="hdr-title">École de Santé de Libreville</div>
-      <div class="hdr-doc">${esc(subtitle)}</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="${logoSrc}" alt="ESL" style="width:56px;height:56px;object-fit:contain;flex-shrink:0" onerror="this.style.display='none'">
+      <div>
+        <div class="hdr-title">École de Santé de Libreville</div>
+        <div class="hdr-doc">${esc(subtitle)}</div>
+      </div>
     </div>
     <div class="hdr-date">Généré le ${date}</div>
   </div>
