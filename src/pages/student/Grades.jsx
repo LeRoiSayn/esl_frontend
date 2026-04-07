@@ -202,6 +202,7 @@ export default function StudentGrades() {
   const totalCredits = currentEnrollments.reduce((sum, e) => sum + (e.class?.course?.credits || 0), 0)
   const graded = currentEnrollments.filter(e => e.grades?.length > 0 && e.grades[0]?.final_grade != null)
   const avgGrade = graded.length > 0 ? graded.reduce((s, e) => s + parseFloat(e.grades[0].final_grade), 0) / graded.length : 0
+  const avgGrade20 = avgGrade / 5
 
   return (
     <div className="space-y-6">
@@ -228,11 +229,16 @@ export default function StudentGrades() {
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card p-6 text-center">
           <p className="text-sm text-gray-500 mb-2">{t('average_grade')}</p>
-          <p className="text-3xl font-bold text-blue-600">{avgGrade.toFixed(1)}</p>
+          <p className="text-3xl font-bold text-blue-600 tabular-nums">
+            {avgGrade.toFixed(1)}<span className="text-lg font-semibold text-gray-500 dark:text-gray-400"> /100</span>
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 tabular-nums">
+            {avgGrade20.toFixed(2)} /20
+          </p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card p-6 text-center">
           <p className="text-sm text-gray-500 mb-2">{t('graded_courses')}</p>
-          <p className="text-3xl font-bold text-teal-600">{graded.length}/{enrollments.length}</p>
+          <p className="text-3xl font-bold text-teal-600">{graded.length}/{currentEnrollments.length}</p>
         </motion.div>
       </div>
 
@@ -248,7 +254,7 @@ export default function StudentGrades() {
                 <th className="text-center">{t('quiz')}<br/><span className="font-normal text-xs">/20</span></th>
                 <th className="text-center">{t('cc_short')}<br/><span className="font-normal text-xs">/30</span></th>
                 <th className="text-center">{t('exam')}<br/><span className="font-normal text-xs">/40</span></th>
-                <th className="text-center">{t('total_score_col')}</th>
+                <th className="text-center">{t('total_score_col')}<br /><span className="font-normal text-xs">/100 · /20</span></th>
                 <th className="text-center">{t('mention_col')}</th>
                 <th className="text-center">{t('status')}</th>
               </tr>
@@ -274,13 +280,27 @@ export default function StudentGrades() {
                     <td className="text-center">{fmtScore(g?.exam_score)}</td>
                     <td className="text-center font-semibold">
                       {final != null ? (
-                        <span className={final >= 50 ? 'text-green-600' : 'text-red-500'}>{final.toFixed(1)}</span>
+                        <div className="tabular-nums">
+                          <span className={final >= 50 ? 'text-green-600' : 'text-red-500'}>
+                            {final.toFixed(1)} /100
+                          </span>
+                          <span className="block text-xs font-normal text-gray-500 dark:text-gray-400 mt-0.5">
+                            ({(final / 5).toFixed(2)} /20)
+                          </span>
+                        </div>
                       ) : '—'}
                     </td>
                     <td className="text-center">
-                      <span className={`badge ${g ? (final >= 50 ? 'badge-success' : 'badge-danger') : 'badge-info'}`}>
-                        {g?.letter_grade || 'N/A'}
-                      </span>
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className={`badge ${g ? (final >= 50 ? 'badge-success' : 'badge-danger') : 'badge-info'}`}>
+                          {g?.letter_grade || 'N/A'}
+                        </span>
+                        {final != null && (
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                            {mention20(final / 5)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="text-center">
                       <span className={`badge ${g ? (final >= 50 ? 'badge-success' : 'badge-danger') : 'badge-warning'}`}>

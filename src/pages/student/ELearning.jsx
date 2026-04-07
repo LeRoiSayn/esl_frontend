@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -20,6 +20,12 @@ import {
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n/index.jsx";
+
+function getEnrollmentCourseId(enrollment) {
+  if (!enrollment) return null;
+  const id = enrollment.class?.course_id ?? enrollment.course_id;
+  return id != null ? Number(id) : null;
+}
 
 // ─── QuizResultModal ─────────────────────────────────────────────────────────
 // Standalone component (outside StudentELearning) so it never unmounts unexpectedly
@@ -361,6 +367,7 @@ const StudentELearning = () => {
   const [quizzes, setQuizzes] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedEnrollmentId, setSelectedEnrollmentId] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [activeQuiz, setActiveQuiz] = useState(null);
   // quizResult: { result, quiz } — set after quiz submission; drives QuizResultModal
@@ -370,6 +377,7 @@ const StudentELearning = () => {
   const [showSubmissionModal, setShowSubmissionModal] = useState(null);
   const [showViewSubmissionModal, setShowViewSubmissionModal] = useState(null);
   const [now, setNow] = useState(() => new Date());
+  const statusRef = useRef({});
 
   useEffect(() => {
     if (user) fetchData();
@@ -381,16 +389,54 @@ const StudentELearning = () => {
     return () => clearInterval(timer);
   }, []);
 
+  const refreshOnlineCourses = useCallback(async () => {
+    try {
+      const onlineRes = await api.get("/elearning/courses/student");
+      setOnlineCourses(onlineRes.data.courses || []);
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    if (!user?.student?.id) return;
+    const timer = setInterval(() => {
+      refreshOnlineCourses();
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [user?.student?.id, refreshOnlineCourses]);
+
+  useEffect(() => {
+    const selectedCourseId = getEnrollmentCourseId(selectedCourse);
+    const prev = statusRef.current;
+    for (const c of onlineCourses) {
+      const old = prev[c.id];
+      const relevant =
+        selectedCourseId == null || Number(c.course_id) === Number(selectedCourseId);
+      if (relevant && old !== undefined && old !== c.status) {
+        if (c.status === "live") {
+          toast.success(t("elearning_live_now_toast"));
+        }
+        if (old === "live" && c.status === "ended") {
+          toast(t("elearning_session_ended_toast"));
+        }
+      }
+    }
+    const next = { ...prev };
+    for (const c of onlineCourses) {
+      next[c.id] = c.status;
+    }
+    statusRef.current = next;
+  }, [onlineCourses, selectedCourse, t]);
+
   // Reset visited tabs when selected course changes
   useEffect(() => {
     setVisitedTabs(new Set(["courses"]));
     setActiveTab("courses");
-  }, [selectedCourse?.course_id, selectedCourse?.class?.course_id]);
+  }, [selectedCourse?.id]);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [onlineRes] = await Promise.all([api.get("/elearning/courses/student")]);
+      const onlineRes = await api.get("/elearning/courses/student");
       setOnlineCourses(onlineRes.data.courses || []);
 
       if (user?.student?.id) {
@@ -448,15 +494,22 @@ const StudentELearning = () => {
     }
   };
 
-  const handleCourseChange = (courseId) => {
-    const course = enrolledCourses.find(
-      (c) => (c.course_id || c.class?.course_id) === parseInt(courseId),
+  const handleCourseChange = (enrollmentIdStr) => {
+    if (!enrollmentIdStr) {
+      setSelectedEnrollmentId("");
+      setSelectedCourse(null);
+      return;
+    }
+    const enrollment = enrolledCourses.find(
+      (e) => String(e.id) === String(enrollmentIdStr),
     );
-    setSelectedCourse(course);
-    if (courseId) {
-      fetchMaterials(courseId);
-      fetchQuizzes(courseId);
-      fetchAssignments(courseId);
+    setSelectedEnrollmentId(String(enrollmentIdStr));
+    setSelectedCourse(enrollment || null);
+    const cid = enrollment ? getEnrollmentCourseId(enrollment) : null;
+    if (cid) {
+      fetchMaterials(cid);
+      fetchQuizzes(cid);
+      fetchAssignments(cid);
     }
   };
 
@@ -515,7 +568,7 @@ const StudentELearning = () => {
       }
     }
 
-    const courseId = selectedCourse?.course_id || selectedCourse?.class?.course_id;
+    const courseId = getEnrollmentCourseId(selectedCourse);
     if (courseId) fetchQuizzes(courseId);
   };
 
@@ -577,8 +630,8 @@ const StudentELearning = () => {
         });
         toast.success(t("assignment_submitted"));
         setShowSubmissionModal(null);
-        if (selectedCourse)
-          fetchAssignments(selectedCourse.course_id || selectedCourse.class?.course_id);
+        const cid = getEnrollmentCourseId(selectedCourse);
+        if (cid) fetchAssignments(cid);
       } catch (error) {
         toast.error(error.response?.data?.error || t("error"));
       } finally {
@@ -737,16 +790,13 @@ const StudentELearning = () => {
           {t("elearning_select_course_label")}
         </label>
         <select
-          value={selectedCourse?.course_id || selectedCourse?.class?.course_id || ""}
+          value={selectedEnrollmentId}
           onChange={(e) => handleCourseChange(e.target.value)}
           className="w-full p-3 rounded-xl bg-gray-100 dark:bg-dark-200 border-0 text-gray-900 dark:text-white"
         >
           <option value="">{t("elearning_select_course_option")}</option>
           {enrolledCourses.map((enrollment) => (
-            <option
-              key={enrollment.id}
-              value={enrollment.course_id || enrollment.class?.course_id}
-            >
+            <option key={enrollment.id} value={String(enrollment.id)}>
               {enrollment.class?.course?.name || enrollment.course?.name || t("course")}
             </option>
           ))}
@@ -781,10 +831,9 @@ const StudentELearning = () => {
         {/* Online Courses */}
         {activeTab === "courses" &&
           (() => {
-            const selectedCourseId =
-              selectedCourse?.course_id || selectedCourse?.class?.course_id;
+            const selectedCourseId = getEnrollmentCourseId(selectedCourse);
             const filteredOnlineCourses = selectedCourseId
-              ? onlineCourses.filter((c) => c.course_id === parseInt(selectedCourseId))
+              ? onlineCourses.filter((c) => Number(c.course_id) === Number(selectedCourseId))
               : onlineCourses;
             return (
               <div className="space-y-4">
@@ -888,11 +937,25 @@ const StudentELearning = () => {
                             {t("elearning_join_course")}
                           </motion.button>
                         )}
-                        {course.status === "scheduled" && (
-                          <div className="w-full py-3 bg-gray-100 dark:bg-dark-200 text-gray-500 dark:text-gray-400 rounded-xl text-center font-medium">
-                            {t("elearning_starts_soon")}
-                          </div>
-                        )}
+                        {course.status === "scheduled" && (() => {
+                          const start = course.scheduled_at
+                            ? new Date(course.scheduled_at)
+                            : null;
+                          const past = start && start <= new Date();
+                          return (
+                            <div
+                              className={`w-full py-3 rounded-xl text-center font-medium ${
+                                past
+                                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200"
+                                  : "bg-gray-100 dark:bg-dark-200 text-gray-500 dark:text-gray-400"
+                              }`}
+                            >
+                              {past
+                                ? t("elearning_waiting_teacher_start")
+                                : t("elearning_starts_soon")}
+                            </div>
+                          );
+                        })()}
                         {course.status === "ended" && course.recording_url && (
                           <button className="w-full py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
                             <PlayIcon className="w-5 h-5" />

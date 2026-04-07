@@ -88,7 +88,11 @@ export default function TeacherDashboard() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-medium">{cls.enrollments?.length || 0} {t('students')}</p>
+                <p className="font-medium">
+                  {cls.enrolled_students_count ??
+                    (cls.enrollments?.filter((e) => e.status === 'enrolled') ?? []).length}{' '}
+                  {t('students')}
+                </p>
                 <p className="text-sm text-gray-500">{t('room')}: {cls.room || t('tbd')}</p>
               </div>
             </div>

@@ -33,6 +33,11 @@ function letterGrade(score) {
   return 'F'
 }
 
+function final100To20(v) {
+  if (v == null || Number.isNaN(v)) return null
+  return (parseFloat(v) / 5).toFixed(2)
+}
+
 export default function TeacherGrades() {
   const { user } = useAuth()
   const { t } = useI18n()
@@ -64,6 +69,7 @@ export default function TeacherGrades() {
           quiz_score:            g?.quiz_score            ?? '',
           continuous_assessment: g?.continuous_assessment ?? '',
           exam_score:            g?.exam_score            ?? '',
+          validated_at:          g?.validated_at          ?? null,
         }
       })
       setGrades(map)
@@ -74,6 +80,7 @@ export default function TeacherGrades() {
   const handleClassSelect = (cls) => { setSelectedClass(cls); fetchStudents(cls.id) }
 
   const handleChange = (enrollmentId, field, value) => {
+    if (grades[enrollmentId]?.validated_at) return
     setGrades(prev => ({ ...prev, [enrollmentId]: { ...prev[enrollmentId], [field]: value } }))
   }
 
@@ -98,12 +105,23 @@ export default function TeacherGrades() {
       await api.post(`/grades/submit-class/${selectedClass.id}`)
       toast.success(t('grade_submitted_success'))
     } catch (err) {
-      toast.error(err.response?.data?.message || t('error'))
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.errors ||
+        t('error')
+      toast.error(typeof msg === 'string' ? msg : t('error'))
     } finally { setSubmitting(false) }
   }
 
   if (loading && !selectedClass)
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>
+
+  const hasUnvalidatedGrade =
+    selectedClass &&
+    students.some((e) => {
+      const g = e.grades?.[0]
+      return g != null && g.validated_at == null
+    })
 
   return (
     <div className="space-y-6">
@@ -143,12 +161,17 @@ export default function TeacherGrades() {
                 <p className="text-sm text-gray-500">{selectedClass.course?.code} · {t('section_label')} {selectedClass.section}</p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col items-end gap-2">
+              {!hasUnvalidatedGrade && students.length > 0 && (
+                <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-lg">
+                  {t('grades_all_validated_teacher')}
+                </span>
+              )}
               <button
                 onClick={handleSubmitToAdmin}
-                disabled={submitting}
-                className="btn-primary flex items-center gap-2"
-                title={t('submit_grades')}
+                disabled={submitting || !hasUnvalidatedGrade}
+                className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={hasUnvalidatedGrade ? t('submit_grades') : t('grades_nothing_to_submit')}
               >
                 <PaperAirplaneIcon className="w-4 h-4" />
                 {submitting ? t('submitting') : t('submit_grades')}
@@ -177,24 +200,41 @@ export default function TeacherGrades() {
                     <th className="w-28">{t('quiz')}<br/><span className="font-normal text-xs text-gray-400">/20</span></th>
                     <th className="w-28">{t('cc_short')}<br/><span className="font-normal text-xs text-gray-400">/30</span></th>
                     <th className="w-28">{t('exam')}<br/><span className="font-normal text-xs text-gray-400">/40</span></th>
-                    <th className="w-24">{t('total_score_col')}</th>
+                    <th className="w-28">{t('total_score_col')}<br/><span className="font-normal text-xs text-gray-400">/100 · /20</span></th>
                     <th className="w-20">{t('mention_col')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {students.map(enrollment => {
                     const row    = grades[enrollment.id] || {}
-                    const final  = calcFinal(row)
-                    const letter = letter => letterGrade(final)
-                    const inputCls = 'w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-dark-100 bg-white dark:bg-dark-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                    const locked = !!row.validated_at
+                    const gDb    = enrollment.grades?.[0]
+                    const SCORE_FIELDS = ['attendance_score','quiz_score','continuous_assessment','exam_score']
+                    const hasAnyScore = SCORE_FIELDS.some((f) => row[f] !== '' && row[f] != null)
+                    let final = null
+                    if (locked) {
+                      final = gDb?.final_grade != null ? parseFloat(gDb.final_grade) : null
+                    } else if (hasAnyScore) {
+                      final = calcFinal(row)
+                    } else if (gDb?.final_grade != null) {
+                      final = parseFloat(gDb.final_grade)
+                    }
+                    const showFinal = final != null && !Number.isNaN(final)
+                    const inputCls = 'w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-dark-100 bg-white dark:bg-dark-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed'
+                    const s20 = showFinal ? final100To20(final) : null
                     return (
-                      <tr key={enrollment.id}>
+                      <tr key={enrollment.id} className={locked ? 'bg-green-50/50 dark:bg-green-900/10' : ''}>
                         <td>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white text-xs font-medium">
                               {enrollment.student?.user?.first_name?.[0]}{enrollment.student?.user?.last_name?.[0]}
                             </div>
-                            <span>{enrollment.student?.user?.first_name} {enrollment.student?.user?.last_name}</span>
+                            <div>
+                              <span>{enrollment.student?.user?.first_name} {enrollment.student?.user?.last_name}</span>
+                              {locked && (
+                                <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">{t('grade_validated_readonly')}</p>
+                              )}
+                            </div>
                           </div>
                         </td>
                         <td className="text-gray-500">{enrollment.student?.student_id}</td>
@@ -209,15 +249,26 @@ export default function TeacherGrades() {
                               max={[10, 20, 30, 40][idx]}
                               step="0.5"
                               placeholder="—"
+                              disabled={locked}
                             />
                           </td>
                         ))}
-                        <td className={`font-semibold ${final >= 50 ? 'text-green-600' : final > 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                          {(Object.values(row).some(v => v !== '')) ? final.toFixed(1) : '—'}
+                        <td className={`font-semibold ${showFinal && final >= 50 ? 'text-green-600' : showFinal && final > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                          {showFinal ? (
+                            <span className="tabular-nums">
+                              {final.toFixed(1)}
+                              <span className="text-gray-500 dark:text-gray-400 font-normal text-xs"> /100</span>
+                              {s20 != null && (
+                                <span className="block text-xs font-normal text-gray-600 dark:text-gray-400">
+                                  ({s20} /20)
+                                </span>
+                              )}
+                            </span>
+                          ) : '—'}
                         </td>
                         <td>
-                          <span className={`badge ${final >= 50 ? 'badge-success' : final > 0 ? 'badge-danger' : 'badge-info'}`}>
-                            {Object.values(row).some(v => v !== '') ? letterGrade(final) : 'N/A'}
+                          <span className={`badge ${showFinal && final >= 50 ? 'badge-success' : showFinal && final > 0 ? 'badge-danger' : 'badge-info'}`}>
+                            {showFinal ? letterGrade(final) : 'N/A'}
                           </span>
                         </td>
                       </tr>

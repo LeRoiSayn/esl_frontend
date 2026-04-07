@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -27,6 +28,7 @@ import {
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
 import { useI18n } from "../../i18n/index.jsx";
+import { toDatetimeLocalValue, datetimeLocalToIsoUtc } from "../../utils/datetimeLocal";
 
 const ELearning = () => {
   const { t } = useI18n();
@@ -118,8 +120,9 @@ const ELearning = () => {
   const startCourse = async (id) => {
     try {
       const res = await api.post(`/elearning/courses/${id}/start`);
+      const updated = res.data.course;
       setOnlineCourses((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, status: "live" } : c))
+        prev.map((c) => (c.id === id ? { ...c, ...updated, status: "live" } : c))
       );
       if (res.data.meeting_url) {
         window.open(res.data.meeting_url, "_blank", "noopener,noreferrer");
@@ -132,9 +135,10 @@ const ELearning = () => {
 
   const endCourse = async (id) => {
     try {
-      await api.post(`/elearning/courses/${id}/end`);
+      const res = await api.post(`/elearning/courses/${id}/end`);
+      const updated = res.data.course;
       setOnlineCourses((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, status: "ended" } : c))
+        prev.map((c) => (c.id === id ? { ...c, ...updated, status: "ended" } : c))
       );
       toast.success(t('session_ended'));
     } catch (err) {
@@ -270,6 +274,8 @@ const ELearning = () => {
       title: "",
       description: "",
       external_url: "",
+      scheduled_at: "",
+      duration_minutes: 60,
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -277,10 +283,13 @@ const ELearning = () => {
       e.preventDefault();
       setIsSubmitting(true);
       try {
-        const toUTC = (val) => (val ? new Date(val).toISOString() : null);
         await api.post("/elearning/courses", {
-          ...formData,
-          scheduled_at: toUTC(formData.scheduled_at),
+          class_id: formData.class_id,
+          title: formData.title,
+          description: formData.description,
+          external_url: formData.external_url,
+          scheduled_at: datetimeLocalToIsoUtc(formData.scheduled_at),
+          duration_minutes: formData.duration_minutes || 60,
         });
         toast.success(t('course_online_created'));
         setShowModal(null);
@@ -358,6 +367,35 @@ const ELearning = () => {
             />
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="label">Date et heure</label>
+              <input
+                type="datetime-local"
+                value={formData.scheduled_at}
+                onChange={(e) =>
+                  setFormData({ ...formData, scheduled_at: e.target.value })
+                }
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="label">Durée (min)</label>
+              <input
+                type="number"
+                min={15}
+                value={formData.duration_minutes}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    duration_minutes: parseInt(e.target.value, 10) || 60,
+                  })
+                }
+                className="input"
+              />
+            </div>
+          </div>
+
           <div className="flex gap-3 pt-4">
             <button
               type="button"
@@ -384,21 +422,29 @@ const ELearning = () => {
       title: editingCourse?.title ?? "",
       description: editingCourse?.description ?? "",
       meeting_url: editingCourse?.meeting_url ?? "",
-      scheduled_at: editingCourse?.scheduled_at
-        ? new Date(editingCourse.scheduled_at).toISOString().slice(0, 16)
-        : "",
+      scheduled_at: toDatetimeLocalValue(editingCourse?.scheduled_at),
       duration_minutes: editingCourse?.duration_minutes ?? 60,
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+      if (!editingCourse) return;
+      setFormData({
+        title: editingCourse.title ?? "",
+        description: editingCourse.description ?? "",
+        meeting_url: editingCourse.meeting_url ?? "",
+        scheduled_at: toDatetimeLocalValue(editingCourse.scheduled_at),
+        duration_minutes: editingCourse.duration_minutes ?? 60,
+      });
+    }, [editingCourse?.id]);
 
     const handleSubmit = async (e) => {
       e.preventDefault();
       setIsSubmitting(true);
       try {
-        const toUTC = (val) => (val ? new Date(val).toISOString() : null);
         await handleUpdateCourse(editingCourse.id, {
           ...formData,
-          scheduled_at: toUTC(formData.scheduled_at),
+          scheduled_at: datetimeLocalToIsoUtc(formData.scheduled_at),
         });
       } finally {
         setIsSubmitting(false);
@@ -1808,7 +1854,7 @@ const ELearning = () => {
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
         {course.course?.name}
       </p>
-      <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-4">
+      <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mb-4">
         <span className="flex items-center gap-1">
           <ClockIcon className="w-4 h-4" />
           {course.duration_minutes} min
@@ -1816,38 +1862,53 @@ const ELearning = () => {
         {course.scheduled_at && (
           <span className="flex items-center gap-1">
             <CalendarIcon className="w-4 h-4" />
-            {new Date(course.scheduled_at).toLocaleDateString("fr-FR")}
+            {new Date(course.scheduled_at).toLocaleString("fr-FR", {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
           </span>
         )}
+        <span className="flex items-center gap-1">
+          <UserGroupIcon className="w-4 h-4" />
+          {course.attendance_count ?? course.attendance?.length ?? 0}
+        </span>
       </div>
-      <div className="flex gap-2">
-        {course.status === "scheduled" && (
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {course.status === "scheduled" && (
+            <button
+              onClick={() => onStart(course.id)}
+              className="flex-1 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600">
+              Démarrer
+            </button>
+          )}
+          {course.status === "live" && (
+            <>
+              <button
+                onClick={() => course.meeting_url && window.open(course.meeting_url, "_blank", "noopener,noreferrer")}
+                className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">
+                Rejoindre
+              </button>
+              <button
+                onClick={() => onEnd(course.id)}
+                className="py-2 px-3 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
+                title="Terminer la session">
+                ⏹
+              </button>
+            </>
+          )}
           <button
-            onClick={() => onStart(course.id)}
-            className="flex-1 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600">
-            Démarrer
+            type="button"
+            onClick={() => onEdit(course)}
+            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-200 rounded-lg">
+            <PencilIcon className="w-4 h-4" />
           </button>
-        )}
-        {course.status === "live" && (
-          <>
-            <button
-              onClick={() => course.meeting_url && window.open(course.meeting_url, "_blank", "noopener,noreferrer")}
-              className="flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">
-              Rejoindre
-            </button>
-            <button
-              onClick={() => onEnd(course.id)}
-              className="py-2 px-3 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800"
-              title="Terminer la session">
-              ⏹
-            </button>
-          </>
-        )}
-        <button
-          onClick={() => onEdit(course)}
-          className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-200 rounded-lg">
-          <PencilIcon className="w-4 h-4" />
-        </button>
+        </div>
+        <Link
+          to={`/teacher/elearning/session/${course.id}/report`}
+          className="w-full py-2 text-center rounded-lg text-sm font-medium border border-gray-200 dark:border-dark-100 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-200">
+          {t("elearning_view_session_report")}
+        </Link>
       </div>
     </motion.div>
   );

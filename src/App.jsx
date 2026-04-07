@@ -42,6 +42,7 @@ import TeacherGrades from './pages/teacher/Grades'
 import TeacherAttendance from './pages/teacher/Attendance'
 import TeacherSchedule from './pages/teacher/Schedule'
 import TeacherELearning from './pages/teacher/ELearning'
+import TeacherOnlineSessionReport from './pages/teacher/OnlineSessionReport'
 
 import StudentDashboard from './pages/student/Dashboard'
 import StudentCourses from './pages/student/Courses'
@@ -194,6 +195,7 @@ function App() {
           <Route path="attendance" element={<TeacherAttendance />} />
           <Route path="schedule" element={<TeacherSchedule />} />
           <Route path="elearning" element={<TeacherELearning />} />
+          <Route path="elearning/session/:sessionId/report" element={<TeacherOnlineSessionReport />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
         </Route>
