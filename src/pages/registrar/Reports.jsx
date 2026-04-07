@@ -72,19 +72,21 @@ export default function RegistrarReports() {
         const rows = users.map(u => {
           const fn = esc(u.user?.first_name || u.first_name || '')
           const ln = esc(u.user?.last_name || u.last_name || '')
+          const username = esc(u.user?.username || u.username || '—')
           const email = esc(u.user?.email || u.email || '—')
           const empId = esc(u.employee_id || u.student_id || u.user?.employee_id || '—')
-          const status = (u.user?.status ?? u.status) === 'inactive' ? 'Inactif' : 'Actif'
-          const stCls = status === 'Actif' ? 'g' : 'r'
+          const rawStatus = u.user?.status ?? u.status ?? ''
+          const stLbl = rawStatus === 'inactive' ? 'Inactif' : rawStatus === 'on_leave' ? 'En congé' : rawStatus === 'suspended' ? 'Suspendu' : rawStatus === 'graduated' ? 'Diplômé' : 'Actif'
           return `<tr>
             <td><strong>${fn} ${ln}</strong></td>
+            <td style="font-family:monospace;font-size:10px">${username}</td>
             <td>${email}</td>
             <td style="font-family:monospace;font-size:10px">${empId}</td>
-            <td style="text-align:center"><span class="badge ${stCls}">${status}</span></td>
+            <td style="text-align:center"><span class="badge">${stLbl}</span></td>
           </tr>`
         }).join('')
         return `<div class="level-title">${ROLE_LABELS[role]} (${users.length})</div>
-          <table><thead><tr><th>Nom Complet</th><th>Email</th><th>ID</th><th style="text-align:center">Statut</th></tr></thead>
+          <table><thead><tr><th>Nom Complet</th><th>Nom d'utilisateur</th><th>Email</th><th>ID</th><th style="text-align:center">Statut</th></tr></thead>
           <tbody>${rows}</tbody></table>`
       }).join('')
 
@@ -132,23 +134,25 @@ export default function RegistrarReports() {
         const rows = list.map(s => {
           const fn = esc(s.user?.first_name || '')
           const ln = esc(s.user?.last_name || '')
+          const username = esc(s.user?.username || '—')
           const enrolDate = s.enrollment_date
             ? new Date(s.enrollment_date).toLocaleDateString('fr-FR')
             : '—'
-          const stCls = s.status === 'active' ? 'g' : s.status === 'graduated' ? 'b' : 'r'
-          const stLbl = s.status === 'active' ? 'Actif' : s.status === 'graduated' ? 'Diplômé' : esc(s.status || 'Inconnu')
+          const rawStatus = s.status ?? ''
+          const stLbl = rawStatus === 'inactive' ? 'Inactif' : rawStatus === 'graduated' ? 'Diplômé' : rawStatus === 'suspended' ? 'Suspendu' : rawStatus === 'on_leave' ? 'En congé' : rawStatus === 'transfer' ? 'Transféré' : 'Actif'
           return `<tr>
             <td style="font-family:monospace;font-size:10px">${esc(s.student_id || '—')}</td>
             <td><strong>${fn} ${ln}</strong></td>
+            <td style="font-family:monospace;font-size:10px">${username}</td>
             <td>${esc(s.department?.name || '—')}</td>
             <td>${esc(s.department?.faculty?.name || '—')}</td>
             <td>${enrolDate}</td>
-            <td style="text-align:center"><span class="badge ${stCls}">${stLbl}</span></td>
+            <td style="text-align:center"><span class="badge">${stLbl}</span></td>
           </tr>`
         }).join('')
         return `<div class="level-title">${esc(lvl)} — ${list.length} étudiant${list.length > 1 ? 's' : ''}</div>
           <table><thead><tr>
-            <th>Matricule</th><th>Nom Complet</th><th>Département</th><th>Faculté</th><th>Inscription</th>
+            <th>Matricule</th><th>Nom Complet</th><th>Nom d'utilisateur</th><th>Département</th><th>Faculté</th><th>Inscription</th>
             <th style="text-align:center">Statut</th>
           </tr></thead><tbody>${rows}</tbody></table>`
       }).join('')
@@ -193,19 +197,21 @@ export default function RegistrarReports() {
           const rows = list.map(t => {
             const fn = esc(t.user?.first_name || '')
             const ln = esc(t.user?.last_name || '')
+            const username = esc(t.user?.username || '—')
             const email = esc(t.user?.email || '—')
             const empId = esc(t.employee_id || '—')
-            const stCls = (t.user?.status ?? t.status) === 'inactive' ? 'r' : 'g'
-            const stLbl = (t.user?.status ?? t.status) === 'inactive' ? 'Inactif' : 'Actif'
+            const rawStatus = t.user?.status ?? t.status ?? ''
+            const stLbl = rawStatus === 'inactive' ? 'Inactif' : rawStatus === 'on_leave' ? 'En congé' : rawStatus === 'suspended' ? 'Suspendu' : 'Actif'
             return `<tr>
               <td style="font-family:monospace;font-size:10px">${empId}</td>
               <td><strong>${fn} ${ln}</strong></td>
+              <td style="font-family:monospace;font-size:10px">${username}</td>
               <td>${email}</td>
-              <td style="text-align:center"><span class="badge ${stCls}">${stLbl}</span></td>
+              <td style="text-align:center"><span class="badge">${stLbl}</span></td>
             </tr>`
           }).join('')
           return `<div class="dept-title">${esc(dept)} (${list.length})</div>
-            <table><thead><tr><th>ID Employé</th><th>Nom Complet</th><th>Email</th><th style="text-align:center">Statut</th></tr></thead>
+            <table><thead><tr><th>ID Employé</th><th>Nom Complet</th><th>Nom d'utilisateur</th><th>Email</th><th style="text-align:center">Statut</th></tr></thead>
             <tbody>${rows}</tbody></table>`
         }).join('')
         return `<div class="faculty-title">${esc(fac)} — ${facTotal} enseignant${facTotal > 1 ? 's' : ''}</div>${deptSections}`

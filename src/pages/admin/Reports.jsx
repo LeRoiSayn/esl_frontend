@@ -152,19 +152,21 @@ export default function AdminReports() {
           const rows = list.map(t => {
             const fn = esc(t.user?.first_name || '')
             const ln = esc(t.user?.last_name || '')
-            const stCls = t.user?.status === 'inactive' ? 'r' : 'g'
-            const stLbl = t.user?.status === 'inactive' ? 'Inactif' : 'Actif'
+            const username = esc(t.user?.username || '—')
+            const rawStatus = t.user?.status ?? t.status ?? ''
+            const stLbl = rawStatus === 'inactive' ? 'Inactif' : rawStatus === 'on_leave' ? 'En congé' : rawStatus === 'suspended' ? 'Suspendu' : 'Actif'
             return `<tr>
               <td style="font-family:monospace;font-size:10px">${esc(t.employee_id || '—')}</td>
               <td><strong>${fn} ${ln}</strong></td>
+              <td style="font-family:monospace;font-size:10px">${username}</td>
               <td>${esc(t.user?.email || '—')}</td>
               <td>${esc(t.user?.phone || '—')}</td>
-              <td style="text-align:center"><span class="badge ${stCls}">${stLbl}</span></td>
+              <td style="text-align:center"><span class="badge">${stLbl}</span></td>
             </tr>`
           }).join('')
           return `<div class="dept-title">${esc(dept)} (${list.length})</div>
             <table><thead><tr>
-              <th>ID Employé</th><th>Nom Complet</th><th>Email</th><th>Téléphone</th>
+              <th>ID Employé</th><th>Nom Complet</th><th>Nom d'utilisateur</th><th>Email</th><th>Téléphone</th>
               <th style="text-align:center">Statut</th>
             </tr></thead><tbody>${rows}</tbody></table>`
         }).join('')
@@ -213,7 +215,6 @@ export default function AdminReports() {
           return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.semester - b.semester
         })
         const rows = sorted.map(c => {
-          const actCls = c.is_active ? 'g' : 'r'
           const actLbl = c.is_active ? 'Actif' : 'Inactif'
           return `<tr>
             <td style="font-family:monospace;font-size:10px"><strong>${esc(c.code || '—')}</strong></td>
@@ -222,7 +223,7 @@ export default function AdminReports() {
             <td style="text-align:center">S${esc(String(c.semester || '—'))}</td>
             <td style="text-align:center">${esc(String(c.credits || 0))}</td>
             <td>${esc(c.course_type || '—')}</td>
-            <td style="text-align:center"><span class="badge ${actCls}">${actLbl}</span></td>
+            <td style="text-align:center"><span class="badge">${actLbl}</span></td>
           </tr>`
         }).join('')
         return `<div class="level-title">${esc(dept)} (${list.length} cours)</div>

@@ -55,12 +55,12 @@ export const BASE_STYLES = `
   th { background: #f9fafb; color: #111827; padding: 7px 8px; text-align: left; font-size: 10px; font-weight: 700; border: 1px solid #e5e7eb; }
   td { padding: 6px 8px; border: 1px solid #e5e7eb; font-size: 11px; color: #111827; background: #fff; }
   tr:nth-child(even) td { background: #f9fafb; }
-  /* Status pills — border style (no solid-colour badges) */
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; border: 1px solid; }
-  .g { background: #f0fdf4; color: #15803d; border-color: #86efac; }
-  .y { background: #fefce8; color: #a16207; border-color: #fde047; }
-  .r { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
-  .b { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+  /* Status pills — neutral, no colour */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; border: 1px solid #d1d5db; background: #f9fafb; color: #374151; }
+  .g { background: #f9fafb; color: #374151; border-color: #d1d5db; }
+  .y { background: #f9fafb; color: #374151; border-color: #d1d5db; }
+  .r { background: #f9fafb; color: #374151; border-color: #d1d5db; }
+  .b { background: #f9fafb; color: #374151; border-color: #d1d5db; }
   /* Summary strip (replaces the KPI-grid) */
   .summary-row { display: flex; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; margin-bottom: 16px; }
   .summary-cell { flex: 1; padding: 10px 14px; border-right: 1px solid #e5e7eb; }

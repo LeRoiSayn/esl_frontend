@@ -50,6 +50,8 @@ export default function RegistrarTeachers() {
     setEditData({
       first_name: teacher.user?.first_name || '',
       last_name: teacher.user?.last_name || '',
+      email: teacher.user?.email || '',
+      username: teacher.user?.username || '',
       phone: teacher.user?.phone || '',
       date_of_birth: teacher.user?.date_of_birth ? teacher.user.date_of_birth.split('T')[0] : '',
       gender: teacher.user?.gender || '',
@@ -121,6 +123,8 @@ export default function RegistrarTeachers() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className="label">Prénom</label><input type="text" value={editData.first_name} onChange={(e) => setEditData({...editData, first_name: e.target.value})} className="input" required /></div>
               <div><label className="label">Nom</label><input type="text" value={editData.last_name} onChange={(e) => setEditData({...editData, last_name: e.target.value})} className="input" required /></div>
+              <div><label className="label">Email</label><input type="email" value={editData.email} onChange={(e) => setEditData({...editData, email: e.target.value})} className="input" /></div>
+              <div><label className="label">Nom d'utilisateur</label><input type="text" value={editData.username} onChange={(e) => setEditData({...editData, username: e.target.value})} className="input" /></div>
               <div><label className="label">Téléphone</label><input type="tel" value={editData.phone} onChange={(e) => setEditData({...editData, phone: e.target.value})} className="input" /></div>
               <div><label className="label">Date de naissance</label><input type="date" value={editData.date_of_birth} onChange={(e) => setEditData({...editData, date_of_birth: e.target.value})} className="input" /></div>
               <div><label className="label">Genre</label><select value={editData.gender} onChange={(e) => setEditData({...editData, gender: e.target.value})} className="input"><option value="">Sélectionner</option><option value="male">Masculin</option><option value="female">Féminin</option></select></div>

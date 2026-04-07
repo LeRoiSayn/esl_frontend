@@ -55,6 +55,8 @@ export default function RegistrarStudents() {
     setEditData({
       first_name: student.user?.first_name || '',
       last_name: student.user?.last_name || '',
+      email: student.user?.email || '',
+      username: student.user?.username || '',
       phone: student.user?.phone || '',
       date_of_birth: student.user?.date_of_birth ? student.user.date_of_birth.split('T')[0] : '',
       gender: student.user?.gender || '',
@@ -156,6 +158,8 @@ export default function RegistrarStudents() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className="label">{t('first_name')}</label><input type="text" value={editData.first_name} onChange={(e) => setEditData({...editData, first_name: e.target.value})} className="input" required /></div>
               <div><label className="label">{t('last_name')}</label><input type="text" value={editData.last_name} onChange={(e) => setEditData({...editData, last_name: e.target.value})} className="input" required /></div>
+              <div><label className="label">{t('email')}</label><input type="email" value={editData.email} onChange={(e) => setEditData({...editData, email: e.target.value})} className="input" /></div>
+              <div><label className="label">{t('username')}</label><input type="text" value={editData.username} onChange={(e) => setEditData({...editData, username: e.target.value})} className="input" /></div>
               <div><label className="label">{t('phone')}</label><input type="tel" value={editData.phone} onChange={(e) => setEditData({...editData, phone: e.target.value})} className="input" /></div>
               <div><label className="label">{t('date_of_birth')}</label><input type="date" value={editData.date_of_birth} onChange={(e) => setEditData({...editData, date_of_birth: e.target.value})} className="input" /></div>
               <div><label className="label">{t('gender')}</label><select value={editData.gender} onChange={(e) => setEditData({...editData, gender: e.target.value})} className="input"><option value="">{t('select_option')}</option><option value="male">{t('male')}</option><option value="female">{t('female')}</option></select></div>
