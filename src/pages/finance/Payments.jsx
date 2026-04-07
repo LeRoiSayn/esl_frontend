@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { paymentApi, studentFeeApi } from '../../services/api'
+import { paymentApi, studentFeeApi, invalidateDashboardCache } from '../../services/api'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
 import {
@@ -24,6 +24,8 @@ export default function FinancePayments() {
   const [payments, setPayments] = useState([])
   const [allFees, setAllFees] = useState([])
   const [loading, setLoading] = useState(true)
+  const [feesLoading, setFeesLoading] = useState(false)
+  const feesLoadedRef = useRef(false)
 
   // Record payment modal state
   // step: 'search' → 'fees' → 'form'
@@ -47,14 +49,21 @@ export default function FinancePayments() {
 
   const fetchData = async () => {
     try {
-      const [payRes, feeRes] = await Promise.all([
-        paymentApi.getAll({ per_page: 100 }),
-        studentFeeApi.getAll({ per_page: 500 }),
-      ])
+      const payRes = await paymentApi.getAll({ per_page: 100 })
       setPayments(payRes.data.data.data || payRes.data.data)
+    } catch { toast.error(t('error')) } finally { setLoading(false) }
+  }
+
+  // Lazy-load unpaid fees only when the record-payment modal opens
+  const fetchFeesOnce = async () => {
+    if (feesLoadedRef.current) return
+    setFeesLoading(true)
+    try {
+      const feeRes = await studentFeeApi.getAll({ per_page: 500 })
       const fees = feeRes.data.data.data || feeRes.data.data
       setAllFees(fees.filter(f => f.status !== 'paid'))
-    } catch { toast.error(t('error')) } finally { setLoading(false) }
+      feesLoadedRef.current = true
+    } catch { toast.error(t('error')) } finally { setFeesLoading(false) }
   }
 
   // ── Derived data ──────────────────────────────────────────────
@@ -93,6 +102,7 @@ export default function FinancePayments() {
     setSelectedFee(null)
     setPayForm(emptyPayForm)
     setModalOpen(true)
+    fetchFeesOnce()
   }
 
   const closeModal = () => {
@@ -121,8 +131,10 @@ export default function FinancePayments() {
     setPaySubmitting(true)
     try {
       await paymentApi.create(payForm)
+      invalidateDashboardCache()
       toast.success(t('payment_recorded'))
       closeModal()
+      feesLoadedRef.current = false  // force re-fetch on next modal open
       fetchData()
     } catch (err) {
       toast.error(err.response?.data?.message || t('error'))
@@ -137,6 +149,7 @@ export default function FinancePayments() {
     setEditSubmitting(true)
     try {
       await paymentApi.update(editingPayment.id, editData)
+      invalidateDashboardCache()
       toast.success(t('payment_updated'))
       setEditModalOpen(false)
       setEditingPayment(null)
@@ -223,7 +236,11 @@ export default function FinancePayments() {
                 className="input pl-10" />
             </div>
             <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-              {filteredStudents.length === 0 ? (
+              {feesLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : filteredStudents.length === 0 ? (
                 <p className="text-center text-gray-500 py-8 text-sm">{t('no_students_pending_fees')}</p>
               ) : filteredStudents.map(s => (
                 <button key={s.id} onClick={() => selectStudent(s)}

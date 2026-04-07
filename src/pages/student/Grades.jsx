@@ -82,11 +82,33 @@ export default function StudentGrades() {
     const matricule = user?.student?.student_id || '—'
     const level = user?.student?.level || '—'
 
+    const TOOLBAR = `
+      <style>
+        .toolbar { position:fixed;top:0;left:0;right:0;z-index:100;background:#1e3a8a;color:white;display:flex;align-items:center;justify-content:space-between;padding:10px 24px;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,.25); }
+        .toolbar-title { font-size:14px;font-weight:600; }
+        .toolbar-sub { font-size:11px;opacity:.75;margin-top:1px; }
+        .tbtn { display:flex;align-items:center;gap:7px;padding:8px 18px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600; }
+        .tbtn-p { background:#269c6d;color:white; } .tbtn-p:hover { background:#1a7a55; }
+        .tbtn-c { background:rgba(255,255,255,.15);color:white; } .tbtn-c:hover { background:rgba(255,255,255,.25); }
+        @media print { .toolbar { display:none!important; } body { margin:15mm 20mm!important; } .page { margin-top:0!important; } }
+      </style>
+      <div class="toolbar">
+        <div><div class="toolbar-title">Relevé de Notes Officiel</div><div class="toolbar-sub">École de Santé de Libreville &nbsp;·&nbsp; ${studentName}</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="tbtn tbtn-p" onclick="window.print()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimer
+          </button>
+          <button class="tbtn tbtn-c" onclick="window.close()">Fermer</button>
+        </div>
+      </div>`
+
     const html = `<!DOCTYPE html><html lang="fr"><head>
       <meta charset="UTF-8"/>
       <title>Relevé de notes — ${studentName}</title>
       <style>
-        body { font-family: Arial, sans-serif; margin: 30px; color: #111; font-size: 12px; }
+        body { font-family: Arial, sans-serif; color: #111; font-size: 12px; background: #f3f4f6; }
+        .page { background:#fff; max-width:860px; margin:68px auto 32px; padding:28px 32px; border-radius:8px; box-shadow:0 1px 6px rgba(0,0,0,.12); }
         .header { text-align: center; margin-bottom: 20px; border-bottom: 3px double #1e40af; padding-bottom: 16px; }
         .header img { height: 80px; margin-bottom: 6px; }
         .header h1 { font-size: 20px; color: #1e40af; margin: 4px 0; font-weight: bold; letter-spacing: 1px; }
@@ -106,9 +128,10 @@ export default function StudentGrades() {
         .fail { color: #dc2626; }
         .no-grade td { color: #9ca3af; font-style: italic; }
         .footer { margin-top: 30px; display: flex; justify-content: space-between; font-size: 11px; color: #666; border-top: 1px solid #ddd; padding-top: 10px; }
-        @media print { body { margin: 15mm 20mm; } }
       </style>
     </head><body>
+      ${TOOLBAR}
+      <div class="page">
       <div class="header">
         <img src="/esl-logo.png" onerror="this.style.display='none'"/>
         <h1>ÉCOLE DE SANTÉ DE LIBREVILLE</h1>
@@ -136,16 +159,17 @@ export default function StudentGrades() {
         <tbody>${tableBody || '<tr><td colspan="9" style="text-align:center;color:#999;padding:20px">Aucune note validée</td></tr>'}</tbody>
       </table>
       <div class="footer">
-        <span>Imprimé le ${printDate}</span>
+        <span>Généré le ${printDate}</span>
         <span>Document officiel — École de santé de Libreville</span>
+      </div>
       </div>
     </body></html>`
 
-    const pw = window.open('', '_blank')
-    pw.document.write(html)
-    pw.document.close()
-    pw.focus()
-    setTimeout(() => { pw.print(); }, 400)
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const pw = window.open(url, '_blank')
+    if (pw) setTimeout(() => URL.revokeObjectURL(url), 60000)
+    else { URL.revokeObjectURL(url); toast.error('Autorisez les pop-ups pour afficher le relevé') }
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>
@@ -171,7 +195,7 @@ export default function StudentGrades() {
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors shrink-0"
         >
           <PrinterIcon className="w-4 h-4" />
-          Relevé de notes
+          Voir le relevé de notes
         </button>
       </motion.div>
 

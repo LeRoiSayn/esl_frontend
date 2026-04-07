@@ -129,8 +129,53 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+      <div className="space-y-6 animate-pulse">
+        {/* Header skeleton */}
+        <div>
+          <div className="h-7 w-48 bg-gray-200 dark:bg-dark-100 rounded-lg mb-2" />
+          <div className="h-4 w-64 bg-gray-100 dark:bg-dark-200 rounded" />
+        </div>
+        {/* Stat cards skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[0,1,2,3].map(i => (
+            <div key={i} className="card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <div className="h-4 w-28 bg-gray-200 dark:bg-dark-100 rounded" />
+                <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-dark-200" />
+              </div>
+              <div className="h-8 w-16 bg-gray-200 dark:bg-dark-100 rounded" />
+            </div>
+          ))}
+        </div>
+        {/* Charts skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[0,1].map(i => (
+            <div key={i} className="card p-6">
+              <div className="h-5 w-40 bg-gray-200 dark:bg-dark-100 rounded mb-4" />
+              <div className="h-64 bg-gray-100 dark:bg-dark-200 rounded-lg" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="card p-6 lg:col-span-2">
+            <div className="h-5 w-40 bg-gray-200 dark:bg-dark-100 rounded mb-4" />
+            <div className="h-64 bg-gray-100 dark:bg-dark-200 rounded-lg" />
+          </div>
+          <div className="card p-6">
+            <div className="h-5 w-32 bg-gray-200 dark:bg-dark-100 rounded mb-4" />
+            <div className="space-y-3">
+              {[0,1,2,3].map(i => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-dark-300">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-dark-100 flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3.5 w-32 bg-gray-200 dark:bg-dark-100 rounded" />
+                    <div className="h-3 w-24 bg-gray-100 dark:bg-dark-200 rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     )
   }

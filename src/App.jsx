@@ -19,8 +19,7 @@ import AdminEnrollment from './pages/admin/Enrollment'
 import AdminReports from './pages/admin/Reports'
 import AdminActivityLog from './pages/admin/ActivityLog'
 import AdminGrades from './pages/admin/Grades'
-  import AdminStudentReport from './pages/admin/StudentReport'
-import AdminStudentManagement from './pages/admin/StudentManagement'
+import AdminStudentReport from './pages/admin/StudentReport'
 import UnifiedStudentManagement from './pages/admin/UnifiedStudentManagement'
 import UnifiedTeacherManagement from './pages/admin/UnifiedTeacherManagement'
 import AdminSchedules from './pages/admin/Schedules'
@@ -29,11 +28,13 @@ import RegistrarDashboard from './pages/registrar/Dashboard'
 import RegistrarStudents from './pages/registrar/Students'
 import RegistrarTeachers from './pages/registrar/Teachers'
 import RegistrarUsers from './pages/registrar/Users'
+import RegistrarReports from './pages/registrar/Reports'
 
 import FinanceDashboard from './pages/finance/Dashboard'
 import FinanceFeeTypes from './pages/finance/FeeTypes'
 import FinanceStudentFees from './pages/finance/StudentFees'
 import FinancePayments from './pages/finance/Payments'
+import FinanceReports from './pages/finance/Reports'
 
 import TeacherDashboard from './pages/teacher/Dashboard'
 import TeacherClasses from './pages/teacher/Classes'
@@ -155,6 +156,7 @@ function App() {
           <Route path="students" element={<RegistrarStudents />} />
           <Route path="teachers" element={<RegistrarTeachers />} />
           <Route path="users" element={<RegistrarUsers />} />
+          <Route path="reports" element={<RegistrarReports />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
         </Route>
@@ -172,6 +174,7 @@ function App() {
           <Route path="fee-types" element={<FinanceFeeTypes />} />
           <Route path="student-fees" element={<FinanceStudentFees />} />
           <Route path="payments" element={<FinancePayments />} />
+          <Route path="reports" element={<FinanceReports />} />
           <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
         </Route>

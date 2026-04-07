@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { studentFeeApi, studentApi, feeTypeApi } from '../../services/api'
@@ -15,10 +15,12 @@ export default function FinanceStudentFees() {
   const { t } = useI18n()
 
   // ── Data ──────────────────────────────────────────────────────
-  const [fees, setFees]         = useState([])
-  const [students, setStudents] = useState([])
-  const [feeTypes, setFeeTypes] = useState([])
-  const [loading, setLoading]   = useState(true)
+  const [fees, setFees]               = useState([])
+  const [students, setStudents]       = useState([])
+  const [feeTypes, setFeeTypes]       = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [studentsLoading, setStudentsLoading] = useState(false)
+  const studentsLoadedRef = useRef(false)
 
   // ── Student detail modal ──────────────────────────────────────
   const [detailOpen, setDetailOpen]           = useState(false)
@@ -39,15 +41,24 @@ export default function FinanceStudentFees() {
 
   const fetchData = async () => {
     try {
-      const [feeRes, studRes, typeRes] = await Promise.all([
+      const [feeRes, typeRes] = await Promise.all([
         studentFeeApi.getAll({ per_page: 200 }),
-        studentApi.getAll({ per_page: 500 }),
         feeTypeApi.getAll({ active_only: true }),
       ])
       setFees(feeRes.data.data.data || feeRes.data.data)
-      setStudents(studRes.data.data.data || studRes.data.data)
       setFeeTypes(typeRes.data.data)
     } catch { toast.error(t('error')) } finally { setLoading(false) }
+  }
+
+  // Lazy-load students only when the assign modal opens
+  const fetchStudentsOnce = async () => {
+    if (studentsLoadedRef.current) return
+    setStudentsLoading(true)
+    try {
+      const res = await studentApi.getAll({ per_page: 500 })
+      setStudents(res.data.data.data || res.data.data)
+      studentsLoadedRef.current = true
+    } catch { toast.error(t('error')) } finally { setStudentsLoading(false) }
   }
 
   // ── Group fees by student ──────────────────────────────────────
@@ -226,7 +237,7 @@ export default function FinanceStudentFees() {
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Frais des étudiants</h1>
           <p className="text-gray-500 dark:text-gray-400">Cliquez sur un étudiant pour gérer ses frais et paiements</p>
         </div>
-        <button onClick={() => setAssignOpen(true)} className="btn-primary flex items-center gap-2">
+        <button onClick={() => { setAssignOpen(true); fetchStudentsOnce() }} className="btn-primary flex items-center gap-2">
           <PlusIcon className="w-5 h-5" /> Assigner frais
         </button>
       </motion.div>
@@ -443,8 +454,8 @@ export default function FinanceStudentFees() {
         <form onSubmit={handleAssignSubmit} className="space-y-4">
           <div>
             <label className="label">Étudiant</label>
-            <select value={formData.student_id} onChange={e => setFormData(p => ({ ...p, student_id: e.target.value }))} className="input" required>
-              <option value="">Sélectionner un étudiant</option>
+            <select value={formData.student_id} onChange={e => setFormData(p => ({ ...p, student_id: e.target.value }))} className="input" required disabled={studentsLoading}>
+              <option value="">{studentsLoading ? 'Chargement…' : 'Sélectionner un étudiant'}</option>
               {students.map(s => <option key={s.id} value={s.id}>{s.user?.first_name} {s.user?.last_name} ({s.student_id})</option>)}
             </select>
           </div>

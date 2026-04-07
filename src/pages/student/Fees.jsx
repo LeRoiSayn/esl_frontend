@@ -11,7 +11,9 @@ import {
   ExclamationCircleIcon,
   ExclamationTriangleIcon,
   CalendarIcon,
+  PrinterIcon,
 } from '@heroicons/react/24/outline'
+import { esc, fmtRwf, openReport } from '../../utils/reportPrint'
 
 export default function StudentFees() {
   const { user } = useAuth()
@@ -35,6 +37,69 @@ export default function StudentFees() {
   }
 
   const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR').format(amount || 0) + ' RWF'
+
+  const handleFinancialReport = () => {
+    const fees = data.fees || []
+    const summary = data.summary || {}
+    const allPay = data.all_payments || fees.flatMap(f => f.payments || [])
+    const studentName = `${esc(user?.first_name || '')} ${esc(user?.last_name || '')}`.trim()
+    const matricule = esc(user?.student?.student_id || '—')
+    const level = esc(user?.student?.level || '—')
+
+    const feeRows = fees.map(f => {
+      const bal = parseFloat(f.amount || 0) - parseFloat(f.paid_amount || 0)
+      const stMap = { paid: ['g', 'Soldé'], partial: ['y', 'Partiel'], pending: ['b', 'En attente'], overdue: ['r', 'En retard'] }
+      const [cls, lbl] = stMap[f.status] || ['b', esc(f.status || '—')]
+      return `<tr>
+        <td><strong>${esc(f.fee_type?.name || 'Frais')}</strong></td>
+        <td style="text-align:right">${fmtRwf(f.amount)}</td>
+        <td style="text-align:right;color:#15803d">${fmtRwf(f.paid_amount)}</td>
+        <td style="text-align:right;font-weight:600;color:${bal > 0 ? '#b91c1c' : '#15803d'}">${fmtRwf(bal)}</td>
+        <td style="text-align:center">${f.due_date ? new Date(f.due_date).toLocaleDateString('fr-FR') : '—'}</td>
+        <td style="text-align:center">${esc(f.academic_year || '—')}</td>
+        <td style="text-align:center"><span class="badge ${cls}">${lbl}</span></td>
+      </tr>`
+    }).join('') || '<tr><td colspan="7" style="text-align:center;color:#9ca3af;padding:12px">Aucun frais</td></tr>'
+
+    const payRows = allPay.slice(0, 30).map(p => `<tr>
+      <td style="font-family:monospace;font-size:10px">${esc(p.reference_number || '—')}</td>
+      <td>${esc(p.student_fee?.fee_type?.name || p.fee_type_name || '—')}</td>
+      <td>${esc(p.payment_method || '—')}</td>
+      <td>${p.payment_date ? new Date(p.payment_date).toLocaleDateString('fr-FR') : '—'}</td>
+      <td style="text-align:right;font-weight:600;color:#15803d">${fmtRwf(p.amount)}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:12px">Aucun paiement</td></tr>'
+
+    const body = `
+      <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;">
+          <div><span style="color:#6b7280">Nom :</span> <strong>${studentName}</strong></div>
+          <div><span style="color:#6b7280">Matricule :</span> <strong style="font-family:monospace">${matricule}</strong></div>
+          <div><span style="color:#6b7280">Niveau :</span> <strong>${level}</strong></div>
+          <div><span style="color:#6b7280">Email :</span> ${esc(user?.email || '—')}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+        <div class="kpi"><div class="lbl">Total Dû</div><div class="val">${fmtRwf(summary.total)}</div></div>
+        <div class="kpi"><div class="lbl">Payé</div><div class="val" style="color:#15803d">${fmtRwf(summary.paid)}</div></div>
+        <div class="kpi"><div class="lbl">Solde Restant</div><div class="val" style="color:${(summary.balance || 0) > 0 ? '#b91c1c' : '#15803d'}">${fmtRwf(summary.balance)}</div></div>
+      </div>
+      <div class="sec-title">Détail des Frais</div>
+      <table><thead><tr>
+        <th>Type de Frais</th><th style="text-align:right">Montant</th>
+        <th style="text-align:right">Payé</th><th style="text-align:right">Solde</th>
+        <th style="text-align:center">Échéance</th><th style="text-align:center">Année</th>
+        <th style="text-align:center">Statut</th>
+      </tr></thead><tbody>${feeRows}</tbody></table>
+      <div class="sec-title">Historique des Paiements</div>
+      <table><thead><tr>
+        <th>Référence</th><th>Type de Frais</th><th>Méthode</th><th>Date</th>
+        <th style="text-align:right">Montant</th>
+      </tr></thead><tbody>${payRows}</tbody></table>`
+
+    if (!openReport('Rapport Financier', `Rapport Financier — ${studentName}`, body)) {
+      alert('Autorisez les pop-ups pour afficher le rapport')
+    }
+  }
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -163,11 +228,20 @@ export default function StudentFees() {
   return (
     <div className="space-y-6 max-w-5xl">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('school_fees')}</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Année académique {data.academic_year || `${new Date().getFullYear()} - ${new Date().getFullYear() + 1}`}
-        </p>
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('school_fees')}</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            Année académique {data.academic_year || `${new Date().getFullYear()} - ${new Date().getFullYear() + 1}`}
+          </p>
+        </div>
+        <button
+          onClick={handleFinancialReport}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shrink-0"
+        >
+          <PrinterIcon className="w-4 h-4" />
+          Voir le rapport financier
+        </button>
       </motion.div>
 
       {/* Smart Payment Status Banner */}

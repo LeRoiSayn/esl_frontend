@@ -67,11 +67,11 @@ export default function NotificationDropdown({ t: tProp }) {
     }
   }, [isOpen])
 
-  // Fetch on mount and periodically
+  // Fetch on mount (delayed 1.5s so the dashboard data loads first) and periodically
   useEffect(() => {
-    fetchNotifications()
+    const initial = setTimeout(fetchNotifications, 1500)
     const interval = setInterval(fetchNotifications, 60000) // Every 60 seconds
-    return () => clearInterval(interval)
+    return () => { clearTimeout(initial); clearInterval(interval) }
   }, [])
 
   const fetchNotifications = async () => {

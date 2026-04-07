@@ -339,7 +339,7 @@ const Chatbot = () => {
   // ── Role colour ──────────────────────────────────────────
   const getRoleColor = () => {
     switch (user?.role) {
-      case 'admin':     return 'from-purple-500 to-purple-600'
+      case 'admin':     return 'from-primary-500 to-primary-600'
       case 'teacher':   return 'from-blue-500 to-blue-600'
       case 'student':   return 'from-primary-500 to-primary-600'
       case 'finance':   return 'from-amber-500 to-amber-600'
@@ -538,7 +538,7 @@ const Chatbot = () => {
                     type="text"
                     placeholder={uiL.searchPlaceholder}
                     className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none"
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter' && e.target.value.trim()) {
                         const q = e.target.value.trim()
                         e.target.value = ''
@@ -571,7 +571,7 @@ const Chatbot = () => {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                   placeholder={uiL.placeholder}
                   className="flex-1 p-3 rounded-xl bg-gray-100 dark:bg-dark-200 text-gray-800 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all"
                 />

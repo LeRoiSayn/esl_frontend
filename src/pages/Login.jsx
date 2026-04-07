@@ -104,15 +104,16 @@ export default function Login() {
 
   // ── Shared background ────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-dark-400 via-dark-300 to-dark-400">
-      <div className="absolute inset-0 overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-dark-400 via-dark-300 to-dark-400">
+      {/* Background decorations — fixed so they never clip the scrollable content */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary-500/20 to-transparent rounded-full blur-3xl" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-accent-500/20 to-transparent rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-primary-400/20 to-transparent rounded-full blur-3xl" />
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`, backgroundSize: '50px 50px' }} />
       </div>
 
       {/* Language toggle */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="fixed top-4 right-4 z-10">
         <div className="flex items-center gap-1 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full p-1">
           {['fr', 'en'].map(lang => (
             <button key={lang} onClick={() => setLanguage(lang)}
@@ -123,7 +124,7 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="relative min-h-screen flex items-center justify-center p-4">
+      <div className="relative min-h-screen flex items-center justify-center p-4 py-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
 
           {/* Logo */}
@@ -131,7 +132,7 @@ export default function Login() {
             <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }} className="inline-flex items-center justify-center mb-6">
               <div className="relative">
                 <div className="absolute inset-0 bg-primary-500/10 rounded-full blur-xl opacity-30" />
-                <img src="/esl-logo.png" alt="ESL" className="relative w-32 h-32 object-cover rounded-full shadow-xl border-4 border-white/10" />
+                <img src="/esl-logo.png" alt="ESL" className="relative w-20 h-20 sm:w-32 sm:h-32 object-cover rounded-full shadow-xl border-4 border-white/10" />
               </div>
             </motion.div>
             <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-4xl font-display font-bold text-white mb-3">ESL</motion.h1>
@@ -143,7 +144,7 @@ export default function Login() {
           </div>
 
           {/* Card */}
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.6, type: 'spring' }} className="card p-8 bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4, type: 'spring' }} className="card p-8 bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all duration-300">
 
             <AnimatePresence mode="wait">
               {/* ── STEP 1: Credentials ── */}

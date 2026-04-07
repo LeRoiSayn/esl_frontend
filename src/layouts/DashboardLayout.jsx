@@ -51,6 +51,7 @@ const menuItems = {
     { nameKey: 'menu_admins', path: '/registrar/users?role=admin', icon: UserCircleIcon },
     { nameKey: 'menu_finance_staff', path: '/registrar/users?role=finance', icon: CurrencyDollarIcon },
     { nameKey: 'menu_registrars', path: '/registrar/users?role=registrar', icon: ClipboardDocumentListIcon },
+    { nameKey: 'menu_reports', path: '/registrar/reports', icon: ChartBarIcon },
     { nameKey: 'menu_settings', path: '/registrar/settings', icon: Cog6ToothIcon },
   ],
   finance: [
@@ -58,6 +59,7 @@ const menuItems = {
     { nameKey: 'menu_fee_types', path: '/finance/fee-types', icon: DocumentTextIcon },
     { nameKey: 'menu_student_fees', path: '/finance/student-fees', icon: CurrencyDollarIcon },
     { nameKey: 'menu_payments', path: '/finance/payments', icon: ClipboardDocumentListIcon },
+    { nameKey: 'menu_reports', path: '/finance/reports', icon: ChartBarIcon },
     { nameKey: 'menu_settings', path: '/finance/settings', icon: Cog6ToothIcon },
   ],
   teacher: [

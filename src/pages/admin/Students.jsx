@@ -218,7 +218,7 @@ function StudentProfileModal({ studentId, onClose, onPromoted }) {
   const [transferData, setTransferData] = useState({ course_id: '', final_grade: '', source_school: '' })
   const [transferSubmitting, setTransferSubmitting] = useState(false)
   const [allCourses, setAllCourses] = useState([])
-  const [showReportMenu, setShowReportMenu] = useState(false)
+  // (report menu state removed — buttons are direct)
 
   const loadData = () => {
     setLoading(true)
@@ -289,13 +289,21 @@ function StudentProfileModal({ studentId, onClose, onPromoted }) {
     }
   }
 
+  const escHtml = (val) =>
+    String(val ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+
   const handleAcademicReport = () => {
     const student = data.student
     const prog = data.academic_progress || {}
     const years = prog.years || []
     const summary = prog.programme_summary || {}
     const stats = data.statistics || {}
-    const studentName = `${student.user?.first_name} ${student.user?.last_name}`
+    const studentName = `${escHtml(student.user?.first_name)} ${escHtml(student.user?.last_name)}`
     const printDate = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
 
     const getMention = (n20) => {
@@ -319,25 +327,25 @@ function StudentProfileModal({ studentId, onClose, onPromoted }) {
         const rows = (sem.courses || []).map(item => {
           const { course, grade, course_status: st, enrollment } = item
           const teacher = enrollment?.teacher
-          const teacherName = teacher ? `${teacher.first_name} ${teacher.last_name}` : '—'
+          const teacherName = teacher ? `${escHtml(teacher.first_name)} ${escHtml(teacher.last_name)}` : '—'
           const n100 = grade?.final_grade != null ? parseFloat(grade.final_grade) : null
           const n20 = n100 != null ? (n100 / 5).toFixed(1) : null
           const mention = n20 != null ? getMention(parseFloat(n20)) : '—'
           const rowStyle = st === 'not_enrolled' ? 'color:#9ca3af;font-style:italic;' : ''
           return `<tr style="border-bottom:1px solid #e5e7eb;${rowStyle}">
-            <td style="padding:5px 8px;font-size:11px;font-family:monospace;">${course?.code || '—'}</td>
-            <td style="padding:5px 8px;font-size:12px;">${course?.name || '—'}</td>
-            <td style="padding:5px 8px;font-size:11px;text-align:center;">${course?.credits || '—'}</td>
+            <td style="padding:5px 8px;font-size:11px;font-family:monospace;">${escHtml(course?.code) || '—'}</td>
+            <td style="padding:5px 8px;font-size:12px;">${escHtml(course?.name) || '—'}</td>
+            <td style="padding:5px 8px;font-size:11px;text-align:center;">${escHtml(course?.credits) || '—'}</td>
             <td style="padding:5px 8px;font-size:11px;">${teacherName}</td>
             <td style="padding:5px 8px;font-size:12px;text-align:center;font-weight:600;">${n100 != null ? n100 + '%' : '—'}</td>
             <td style="padding:5px 8px;font-size:12px;text-align:center;font-weight:600;">${n20 != null ? n20 + '/20' : '—'}</td>
-            <td style="padding:5px 8px;font-size:11px;text-align:center;">${n20 != null ? mention : '—'}</td>
-            <td style="padding:5px 8px;font-size:11px;text-align:center;color:${stColors[st] || '#9ca3af'};font-weight:600;">${stLabels[st] || st}</td>
+            <td style="padding:5px 8px;font-size:11px;text-align:center;">${n20 != null ? escHtml(mention) : '—'}</td>
+            <td style="padding:5px 8px;font-size:11px;text-align:center;color:${stColors[st] || '#9ca3af'};font-weight:600;">${stLabels[st] || escHtml(st)}</td>
           </tr>`
         }).join('')
         semsHtml += `<div style="margin-bottom:16px;">
           <div style="display:flex;align-items:center;gap:10px;background:#f8fafc;padding:7px 10px;border-radius:6px;margin-bottom:6px;">
-            <span style="font-size:13px;font-weight:600;color:#374151;">${sem.label}</span>
+            <span style="font-size:13px;font-weight:600;color:#374151;">${escHtml(sem.label)}</span>
             <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${sColor}20;color:${sColor};font-weight:600;">${sLabel}</span>
             <span style="font-size:10px;color:#9ca3af;margin-left:auto;">${sem.stats?.validated || 0}/${sem.stats?.total || 0} validés · ${sem.stats?.credits_earned || 0}/${sem.stats?.credits_total || 0} cr.</span>
           </div>
@@ -358,8 +366,8 @@ function StudentProfileModal({ studentId, onClose, onPromoted }) {
       })
       yearsHtml += `<div style="margin-bottom:20px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
         <div style="background:${yBg};padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e5e7eb;">
-          <span style="font-size:14px;font-weight:700;color:${yColor};">${yearData.year}</span>
-          <span style="font-size:13px;font-weight:600;color:#374151;">${yearData.year_label}</span>
+          <span style="font-size:14px;font-weight:700;color:${yColor};">${escHtml(yearData.year)}</span>
+          <span style="font-size:13px;font-weight:600;color:#374151;">${escHtml(yearData.year_label)}</span>
           <span style="font-size:10px;color:#9ca3af;margin-left:auto;">${yearData.year_stats?.validated || 0}/${yearData.year_stats?.total || 0} validés · ${yearData.year_stats?.credits_earned || 0}/${yearData.year_stats?.credits_total || 0} cr.</span>
         </div>
         <div style="padding:14px;">${semsHtml}</div>
@@ -383,14 +391,14 @@ function StudentProfileModal({ studentId, onClose, onPromoted }) {
     <h1 style="font-size:18px;font-weight:700;color:#0f766e;margin-bottom:3px;">École de Santé de Libreville</h1>
     <h2 style="font-size:15px;font-weight:600;color:#374151;">Rapport Académique — Parcours Complet</h2>
   </div>
-  <div style="text-align:right;font-size:11px;color:#6b7280;"><p>Imprimé le ${printDate}</p></div>
+  <div style="text-align:right;font-size:11px;color:#6b7280;"><p>Imprimé le ${escHtml(printDate)}</p></div>
 </div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
   <div style="background:#f8fafc;border-radius:8px;padding:12px;">
     <p style="font-size:11px;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Étudiant</p>
     <p style="font-size:16px;font-weight:700;color:#111827;margin-bottom:2px;">${studentName}</p>
-    <p style="font-size:12px;color:#6b7280;">${student.student_id} · ${student.level || '—'}</p>
-    <p style="font-size:12px;color:#6b7280;">${student.department?.name || '—'}</p>
+    <p style="font-size:12px;color:#6b7280;">${escHtml(student.student_id)} · ${escHtml(student.level) || '—'}</p>
+    <p style="font-size:12px;color:#6b7280;">${escHtml(student.department?.name) || '—'}</p>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
     <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;">
@@ -416,17 +424,17 @@ ${yearsHtml}
 </div>
 </body></html>`
 
-    const pw = window.open('', '_blank')
-    pw.document.write(html)
-    pw.document.close()
-    pw.focus()
-    setTimeout(() => pw.print(), 400)
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const pw = window.open(url, '_blank')
+    if (pw) setTimeout(() => URL.revokeObjectURL(url), 60000)
+    else { URL.revokeObjectURL(url); toast.error('Autorisez les pop-ups pour afficher le rapport') }
   }
 
   const handleFinancialReport = () => {
     const student = data.student
     const feesDetail = data.fees_detail || []
-    const studentName = `${student.user?.first_name} ${student.user?.last_name}`
+    const studentName = `${escHtml(student.user?.first_name)} ${escHtml(student.user?.last_name)}`
     const printDate = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
 
     const fmt = (amount) => new Intl.NumberFormat('fr-FR').format(amount || 0) + ' RWF'
@@ -461,7 +469,7 @@ ${yearsHtml}
       </tr></thead><tbody>`
 
     const feeRow = (f, i) => `<tr style="border-bottom:1px solid #e5e7eb;${i % 2 !== 0 ? 'background:#f9fafb;' : ''}">
-      <td style="padding:6px 8px;font-size:12px;">${f.fee_type?.name || '—'}</td>
+      <td style="padding:6px 8px;font-size:12px;">${escHtml(f.fee_type?.name) || '—'}</td>
       <td style="padding:6px 8px;font-size:12px;text-align:right;">${fmt(f.amount)}</td>
       <td style="padding:6px 8px;font-size:12px;text-align:right;color:#16a34a;font-weight:600;">${fmt(f.paid_amount)}</td>
       <td style="padding:6px 8px;font-size:12px;text-align:right;color:${f.balance > 0 ? '#dc2626' : '#16a34a'};font-weight:600;">${fmt(f.balance)}</td>
@@ -476,15 +484,15 @@ ${yearsHtml}
 
     const tuitionSection = Object.keys(tuitionByYear).sort((a, b) => b.localeCompare(a)).map(yr => `
       <div style="margin-bottom:20px;">
-        <h3 style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px;padding-left:4px;border-left:3px solid #0f766e;">Frais de scolarité — Année ${yr}</h3>
+        <h3 style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px;padding-left:4px;border-left:3px solid #0f766e;">Frais de scolarité — Année ${escHtml(yr)}</h3>
         ${feeTableHead}${tuitionByYear[yr].map((f, i) => feeRow(f, i)).join('')}</tbody></table>
       </div>`).join('')
 
     const paymentRows = allPayments.map((p, i) => `<tr style="border-bottom:1px solid #e5e7eb;${i % 2 !== 0 ? 'background:#f9fafb;' : ''}">
       <td style="padding:6px 8px;font-size:12px;">${p.payment_date ? new Date(p.payment_date).toLocaleDateString('fr-FR') : '—'}</td>
-      <td style="padding:6px 8px;font-size:11px;font-family:monospace;">${p.reference_number || '—'}</td>
-      <td style="padding:6px 8px;font-size:12px;">${p.fee_type_name}</td>
-      <td style="padding:6px 8px;font-size:12px;">${p.payment_method || '—'}</td>
+      <td style="padding:6px 8px;font-size:11px;font-family:monospace;">${escHtml(p.reference_number) || '—'}</td>
+      <td style="padding:6px 8px;font-size:12px;">${escHtml(p.fee_type_name)}</td>
+      <td style="padding:6px 8px;font-size:12px;">${escHtml(p.payment_method) || '—'}</td>
       <td style="padding:6px 8px;font-size:12px;text-align:right;font-weight:600;color:#16a34a;">${fmt(p.amount)}</td>
     </tr>`).join('')
 
@@ -525,8 +533,8 @@ ${yearsHtml}
   <div style="background:#f8fafc;border-radius:8px;padding:12px;">
     <p style="font-size:11px;color:#6b7280;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Étudiant</p>
     <p style="font-size:16px;font-weight:700;color:#111827;margin-bottom:2px;">${studentName}</p>
-    <p style="font-size:12px;color:#6b7280;">${student.student_id} · ${student.level || '—'}</p>
-    <p style="font-size:12px;color:#6b7280;">${student.department?.name || '—'}</p>
+    <p style="font-size:12px;color:#6b7280;">${escHtml(student.student_id)} · ${escHtml(student.level) || '—'}</p>
+    <p style="font-size:12px;color:#6b7280;">${escHtml(student.department?.name) || '—'}</p>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
     <div style="background:#f8fafc;border-radius:8px;padding:10px;text-align:center;border:1px solid #e5e7eb;">
@@ -551,11 +559,11 @@ ${paymentsSection}
 </div>
 </body></html>`
 
-    const pw = window.open('', '_blank')
-    pw.document.write(html)
-    pw.document.close()
-    pw.focus()
-    setTimeout(() => pw.print(), 400)
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const pw = window.open(url, '_blank')
+    if (pw) setTimeout(() => URL.revokeObjectURL(url), 60000)
+    else { URL.revokeObjectURL(url); toast.error('Autorisez les pop-ups pour afficher le rapport') }
   }
 
   if (loading) {
@@ -650,6 +658,21 @@ ${paymentsSection}
                 <AcademicCapIcon className="w-4 h-4" /> Cursus licence terminé
               </span>
             )}
+            {/* ── Report buttons ── */}
+            <button
+              onClick={handleAcademicReport}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-sm font-medium transition-colors"
+              title="Rapport académique (imprimer)"
+            >
+              <DocumentTextIcon className="w-4 h-4" /> Académique
+            </button>
+            <button
+              onClick={handleFinancialReport}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-sm font-medium transition-colors"
+              title="Rapport financier (imprimer)"
+            >
+              <PrinterIcon className="w-4 h-4" /> Financier
+            </button>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-100">
               <XMarkIcon className="w-5 h-5 text-gray-500" />
             </button>
