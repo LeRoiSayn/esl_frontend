@@ -17,7 +17,7 @@ import {
   ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
 import api, { courseApi } from "../../services/api";
-import { openReport, esc as escReport } from "../../utils/reportPrint";
+import { openReportAsync, esc as escReport } from "../../utils/reportPrint";
 
 const StudentManagement = () => {
   const [students, setStudents] = useState([]);
@@ -189,13 +189,15 @@ const StudentManagement = () => {
   const openAcademicReport = async () => {
     if (!selectedStudent) return alert("Sélectionnez un étudiant");
     try {
-      const deptId = selectedStudent.student.department?.id;
-      const res = await courseApi.getAll({ department_id: deptId, per_page: 1000 });
-      const data = res.data.data || res.data;
-      const courses = data.data || data || [];
-      const fullName = `${selectedStudent.student.user?.first_name || ''} ${selectedStudent.student.user?.last_name || ''}`.trim();
-      const body = generateAcademicReportBody(selectedStudent, courses);
-      if (!openReport('Rapport Académique', `Relevé de ${fullName}`, body))
+      if (!(await openReportAsync('Rapport Académique', async () => {
+        const deptId = selectedStudent.student.department?.id;
+        const res = await courseApi.getAll({ department_id: deptId, per_page: 1000 });
+        const data = res.data.data || res.data;
+        const courses = data.data || data || [];
+        const fullName = `${selectedStudent.student.user?.first_name || ''} ${selectedStudent.student.user?.last_name || ''}`.trim();
+        const body = generateAcademicReportBody(selectedStudent, courses);
+        return { subtitle: `Relevé de ${fullName}`, body };
+      })))
         alert("Impossible d'ouvrir une nouvelle fenêtre. Vérifiez le bloqueur de popups.");
       setShowReportDropdown(false);
     } catch (e) {
@@ -207,14 +209,16 @@ const StudentManagement = () => {
   const openFinancialReport = async () => {
     if (!selectedStudent) return alert("Sélectionnez un étudiant");
     try {
-      const payments = [];
-      const fees = selectedStudent.student?.fees || selectedStudent.fees || [];
-      fees.forEach((f) => { if (f.payments) f.payments.forEach((p) => payments.push(p)) });
-      if ((selectedStudent.payments || []).length > 0)
-        selectedStudent.payments.forEach((p) => payments.push(p));
-      const fullName = `${selectedStudent.student.user?.first_name || ''} ${selectedStudent.student.user?.last_name || ''}`.trim();
-      const body = generateFinancialReportBody(selectedStudent, payments);
-      if (!openReport('Rapport Financier', `Historique de ${fullName}`, body))
+      if (!(await openReportAsync('Rapport Financier', async () => {
+        const payments = [];
+        const fees = selectedStudent.student?.fees || selectedStudent.fees || [];
+        fees.forEach((f) => { if (f.payments) f.payments.forEach((p) => payments.push(p)) });
+        if ((selectedStudent.payments || []).length > 0)
+          selectedStudent.payments.forEach((p) => payments.push(p));
+        const fullName = `${selectedStudent.student.user?.first_name || ''} ${selectedStudent.student.user?.last_name || ''}`.trim();
+        const body = generateFinancialReportBody(selectedStudent, payments);
+        return { subtitle: `Historique de ${fullName}`, body };
+      })))
         alert("Impossible d'ouvrir une nouvelle fenêtre. Vérifiez le bloqueur de popups.");
       setShowReportDropdown(false);
     } catch (e) {

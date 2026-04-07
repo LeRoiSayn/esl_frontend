@@ -15,7 +15,7 @@ function calcFinal(row) {
   const quiz = parseFloat(row.quiz_score)            || 0
   const ca   = parseFloat(row.continuous_assessment) || 0
   const exam = parseFloat(row.exam_score)            || 0
-  return a + quiz + ca + exam
+  return Math.round((a + quiz + ca + exam) * 100) / 100
 }
 
 function letterGrade(score) {
@@ -116,12 +116,15 @@ export default function TeacherGrades() {
   if (loading && !selectedClass)
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>
 
-  const hasUnvalidatedGrade =
-    selectedClass &&
-    students.some((e) => {
+  /** True only when every enrolled student has an admin-validated grade (same rule as API submit). */
+  const allStudentsValidated =
+    students.length > 0 &&
+    students.every((e) => {
       const g = e.grades?.[0]
-      return g != null && g.validated_at == null
+      return g != null && g.validated_at != null
     })
+
+  const canSubmitToAdmin = selectedClass && students.length > 0 && !allStudentsValidated
 
   return (
     <div className="space-y-6">
@@ -162,16 +165,16 @@ export default function TeacherGrades() {
               </div>
             </div>
             <div className="flex flex-col items-end gap-2">
-              {!hasUnvalidatedGrade && students.length > 0 && (
+              {allStudentsValidated && (
                 <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded-lg">
                   {t('grades_all_validated_teacher')}
                 </span>
               )}
               <button
                 onClick={handleSubmitToAdmin}
-                disabled={submitting || !hasUnvalidatedGrade}
+                disabled={submitting || !canSubmitToAdmin}
                 className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                title={hasUnvalidatedGrade ? t('submit_grades') : t('grades_nothing_to_submit')}
+                title={canSubmitToAdmin ? t('submit_grades') : t('grades_nothing_to_submit')}
               >
                 <PaperAirplaneIcon className="w-4 h-4" />
                 {submitting ? t('submitting') : t('submit_grades')}
@@ -256,7 +259,7 @@ export default function TeacherGrades() {
                         <td className={`font-semibold ${showFinal && final >= 50 ? 'text-green-600' : showFinal && final > 0 ? 'text-red-500' : 'text-gray-400'}`}>
                           {showFinal ? (
                             <span className="tabular-nums">
-                              {final.toFixed(1)}
+                              {final.toFixed(2)}
                               <span className="text-gray-500 dark:text-gray-400 font-normal text-xs"> /100</span>
                               {s20 != null && (
                                 <span className="block text-xs font-normal text-gray-600 dark:text-gray-400">

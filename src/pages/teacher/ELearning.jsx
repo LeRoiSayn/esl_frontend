@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -29,6 +28,10 @@ import {
 import api from "../../services/api";
 import { useI18n } from "../../i18n/index.jsx";
 import { toDatetimeLocalValue, datetimeLocalToIsoUtc } from "../../utils/datetimeLocal";
+import {
+  openReportAsync,
+  buildOnlineCourseAttendanceReportBody,
+} from "../../utils/reportPrint";
 
 const ELearning = () => {
   const { t } = useI18n();
@@ -44,6 +47,7 @@ const ELearning = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
+  const [sessionReportLoadingId, setSessionReportLoadingId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -1796,6 +1800,28 @@ const ELearning = () => {
     );
   };
 
+  const openSessionAttendanceReport = async (sessionId) => {
+    setSessionReportLoadingId(sessionId);
+    try {
+      const title = "Rapport — cours en ligne";
+      const ok = await openReportAsync(title, async () => {
+        const res = await api.get(
+          `/elearning/courses/${sessionId}/attendance-report`,
+        );
+        const session = res.data?.session ?? {};
+        return {
+          subtitle: session.title || `Session #${sessionId}`,
+          body: buildOnlineCourseAttendanceReportBody(res.data),
+        };
+      });
+      if (!ok) toast.error(t("popup_blocked"));
+    } catch {
+      toast.error(t("error"));
+    } finally {
+      setSessionReportLoadingId(null);
+    }
+  };
+
   // ==================== COMPONENTS ====================
 
   const EmptyState = ({
@@ -1819,7 +1845,14 @@ const ELearning = () => {
     </div>
   );
 
-  const CourseCard = ({ course, onStart, onEnd, onEdit }) => (
+  const CourseCard = ({
+    course,
+    onStart,
+    onEnd,
+    onEdit,
+    onOpenReport,
+    sessionReportLoadingId,
+  }) => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -1904,11 +1937,15 @@ const ELearning = () => {
             <PencilIcon className="w-4 h-4" />
           </button>
         </div>
-        <Link
-          to={`/teacher/elearning/session/${course.id}/report`}
-          className="w-full py-2 text-center rounded-lg text-sm font-medium border border-gray-200 dark:border-dark-100 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-200">
-          {t("elearning_view_session_report")}
-        </Link>
+        <button
+          type="button"
+          disabled={sessionReportLoadingId !== null}
+          onClick={() => onOpenReport(course.id)}
+          className="w-full py-2 text-center rounded-lg text-sm font-medium border border-gray-200 dark:border-dark-100 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-200 disabled:opacity-50 disabled:cursor-not-allowed">
+          {sessionReportLoadingId === course.id
+            ? t("loading")
+            : t("elearning_view_session_report")}
+        </button>
       </div>
     </motion.div>
   );
@@ -2196,6 +2233,8 @@ const ELearning = () => {
                       onStart={startCourse}
                       onEnd={endCourse}
                       onEdit={setEditingCourse}
+                      onOpenReport={openSessionAttendanceReport}
+                      sessionReportLoadingId={sessionReportLoadingId}
                     />
                   ))}
                 </div>

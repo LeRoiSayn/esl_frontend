@@ -1,5 +1,5 @@
 /**
- * Shared utilities for client-side print report generation via Blob URLs.
+ * Client-side print reports: new tab + document write (mobile-friendly; avoids blob: pop-up blocks).
  */
 
 export const esc = (val) =>
@@ -88,14 +88,16 @@ export const BASE_STYLES = `
   }
 `
 
+const VIEWPORT_META =
+  '<meta name="viewport" content="width=device-width, initial-scale=1">'
+
 /**
- * Build an HTML document from the given body HTML and open it in a new tab via Blob URL.
- * The report shows a fixed toolbar with a Print button — the user reviews first, then prints.
+ * Full HTML document for a report (toolbar + page).
  */
-export function openReport(title, subtitle, body) {
+export function buildReportDocumentHtml(title, subtitle, body) {
   const date = fmtDate()
   const logoSrc = esc(LOGO_URL)
-  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">${VIEWPORT_META}
 <title>${esc(title)}</title><style>${BASE_STYLES}</style>
 </head><body>
 <div class="toolbar no-print">
@@ -107,14 +109,14 @@ export function openReport(title, subtitle, body) {
     </div>
   </div>
   <div style="display:flex;gap:8px">
-    <button class="toolbar-btn btn-print" onclick="window.print()">
+    <button type="button" class="toolbar-btn btn-print" onclick="window.print()">
       <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
         <rect x="6" y="14" width="12" height="8"/>
       </svg>
       Imprimer
     </button>
-    <button class="toolbar-btn btn-close" onclick="window.close()">Fermer</button>
+    <button type="button" class="toolbar-btn btn-close" onclick="window.close()">Fermer</button>
   </div>
 </div>
 <div class="page">
@@ -132,11 +134,115 @@ export function openReport(title, subtitle, body) {
   <div class="footer">Document généré automatiquement — École de Santé de Libreville — ${date}</div>
 </div>
 </body></html>`
+}
 
-  const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const pw = window.open(url, '_blank')
-  if (!pw) { URL.revokeObjectURL(url); return false }
-  setTimeout(() => URL.revokeObjectURL(url), 60000)
+/**
+ * Open report in a new tab (same event tick as the click). Use when body is already available.
+ */
+export function openReport(title, subtitle, body) {
+  const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
+  if (!w) return false
+  try {
+    w.document.open()
+    w.document.write(buildReportDocumentHtml(title, subtitle, body))
+    w.document.close()
+    w.focus()
+  } catch {
+    try {
+      w.close()
+    } catch (_) {}
+    return false
+  }
   return true
+}
+
+const LOADING_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">${VIEWPORT_META}<title>…</title></head><body style="font-family:system-ui,sans-serif;padding:24px;text-align:center;color:#374151">Chargement…</body></html>`
+
+/**
+ * For reports built after async work: opens a tab immediately (user gesture), then fills content.
+ * load() must return { subtitle, body }.
+ */
+export async function openReportAsync(title, load) {
+  const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
+  if (!w) return false
+  try {
+    w.document.open()
+    w.document.write(LOADING_HTML)
+    w.document.close()
+    const { subtitle, body } = await load()
+    w.document.open()
+    w.document.write(buildReportDocumentHtml(title, subtitle, body))
+    w.document.close()
+    try {
+      w.focus()
+    } catch (_) {}
+  } catch (e) {
+    try {
+      w.close()
+    } catch (_) {}
+    throw e
+  }
+  return true
+}
+
+/**
+ * HTML body for online course attendance report (used with openReport).
+ * @param {object} data – JSON from GET /elearning/courses/{id}/attendance-report
+ */
+export function buildOnlineCourseAttendanceReportBody(data) {
+  const session = data?.session ?? {}
+  const attendees = Array.isArray(data?.attendees) ? data.attendees : []
+  const count = data?.attendee_count ?? attendees.length
+  const scheduled = session.scheduled_at ? new Date(session.scheduled_at) : null
+
+  const dateStr = scheduled
+    ? scheduled.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '—'
+  const timeStr = scheduled
+    ? scheduled.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : '—'
+
+  const descBlock = session.description
+    ? `<div class="info-box"><strong>Description</strong><br>${esc(session.description).replace(/\n/g, '<br>')}</div>`
+    : ''
+
+  const courseLine = session.course_name
+    ? `<p class="hdr-sub" style="margin-top:6px">Cours : ${esc(session.course_name)}</p>`
+    : ''
+
+  const rows =
+    attendees.length > 0
+      ? attendees
+          .map((row) => {
+            const joined = row.joined_at
+              ? new Date(row.joined_at).toLocaleString('fr-FR', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                })
+              : '—'
+            return `<tr><td>${esc(row.student?.name)}</td><td>${esc(row.student?.student_id)}</td><td>${esc(joined)}</td></tr>`
+          })
+          .join('')
+      : `<tr><td colspan="3" style="text-align:center;color:#6b7280">Aucun participant enregistré</td></tr>`
+
+  return `
+    ${descBlock}
+    ${courseLine}
+    <div class="summary-row">
+      <div class="summary-cell"><div class="summary-lbl">Date</div><div class="summary-val">${esc(dateStr)}</div></div>
+      <div class="summary-cell"><div class="summary-lbl">Heure</div><div class="summary-val">${esc(timeStr)}</div></div>
+      <div class="summary-cell"><div class="summary-lbl">Durée</div><div class="summary-val">${session.duration_minutes != null ? esc(String(session.duration_minutes)) + ' min' : '—'}</div></div>
+      <div class="summary-cell"><div class="summary-lbl">Participants</div><div class="summary-val">${esc(String(count))}</div></div>
+    </div>
+    <div class="section-title">Liste des participants</div>
+    <table>
+      <thead><tr><th>Étudiant</th><th>Matricule</th><th>Connexion</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `
 }

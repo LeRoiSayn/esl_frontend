@@ -20,6 +20,7 @@ import {
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n/index.jsx";
+import { openExternalUrl, saveOrOpenBlob } from "../../utils/mobileWeb";
 
 function getEnrollmentCourseId(enrollment) {
   if (!enrollment) return null;
@@ -516,9 +517,15 @@ const StudentELearning = () => {
   const joinCourse = async (courseId) => {
     try {
       const response = await api.post(`/elearning/courses/${courseId}/join`);
-      if (response.data.meeting_url) {
-        window.open(response.data.meeting_url, "_blank");
+      const meetingUrl = response.data?.meeting_url;
+      if (!meetingUrl) {
+        toast.error(t("elearning_no_meeting_link"));
+        return;
+      }
+      if (openExternalUrl(meetingUrl)) {
         toast.success(t("joining_live_course"));
+      } else {
+        toast.error(t("error"));
       }
     } catch (error) {
       toast.error(error.response?.data?.error || t("error"));
@@ -530,15 +537,28 @@ const StudentELearning = () => {
       const response = await api.get(`/elearning/materials/${materialId}/download`, {
         responseType: "blob",
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const mime =
+        response.headers?.["content-type"]?.split(";")[0]?.trim() ||
+        "application/octet-stream";
+      saveOrOpenBlob(response.data, fileName || "document", mime);
       toast.success(t("download_started"));
     } catch (error) {
+      toast.error(t("error"));
+    }
+  };
+
+  const downloadSubmissionFile = async (submissionId, fileName) => {
+    try {
+      const response = await api.get(
+        `/elearning/assignments/submission/${submissionId}/download`,
+        { responseType: "blob" },
+      );
+      const mime =
+        response.headers?.["content-type"]?.split(";")[0]?.trim() ||
+        "application/octet-stream";
+      saveOrOpenBlob(response.data, fileName || "remise", mime);
+      toast.success(t("download_started"));
+    } catch {
       toast.error(t("error"));
     }
   };
@@ -1013,7 +1033,7 @@ const StudentELearning = () => {
                     <div className="flex items-center gap-2">
                       {material.external_url ? (
                         <button
-                          onClick={() => window.open(material.external_url, "_blank")}
+                          onClick={() => openExternalUrl(material.external_url)}
                           className="p-2 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg"
                         >
                           <PlayIcon className="w-5 h-5" />
@@ -1324,9 +1344,28 @@ const StudentELearning = () => {
                 )}
                 {/* File */}
                 {showViewSubmissionModal.submission?.file_name && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-dark-200 rounded-xl">
-                    <DocumentTextIcon className="w-6 h-6 text-primary-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{showViewSubmissionModal.submission.file_name}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-dark-200 rounded-xl">
+                      <DocumentTextIcon className="w-6 h-6 text-primary-500 flex-shrink-0" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300 break-all">
+                        {showViewSubmissionModal.submission.file_name}
+                      </span>
+                    </div>
+                    {showViewSubmissionModal.submission?.id != null && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          downloadSubmissionFile(
+                            showViewSubmissionModal.submission.id,
+                            showViewSubmissionModal.submission.file_name,
+                          )
+                        }
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary-500 text-white text-sm font-medium hover:bg-primary-600"
+                      >
+                        <ArrowDownTrayIcon className="w-5 h-5" />
+                        {t("elearning_download_file")}
+                      </button>
+                    )}
                   </div>
                 )}
                 {/* Grade & feedback */}
