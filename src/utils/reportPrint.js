@@ -246,3 +246,83 @@ export function buildOnlineCourseAttendanceReportBody(data) {
     </table>
   `
 }
+
+/**
+ * HTML body for quiz results (print / new tab) — same visual system as other ESL reports.
+ */
+export function buildQuizResultsReportBody({
+  quiz,
+  stats,
+  attempts,
+  courseName,
+}) {
+  const q = quiz || {}
+  const st = stats || {}
+  const passAt = parseFloat(q.passing_score)
+  const rows =
+    (attempts || [])
+      .map((a) => {
+        const sc = a.score
+        const passed =
+          typeof sc === 'number' &&
+          !Number.isNaN(passAt) &&
+          sc >= passAt
+        const scoreStr =
+          typeof sc === 'number' ? sc.toFixed(1) : String(sc ?? '—')
+        const statusLbl = passed ? 'Réussi' : 'Non reçu'
+        const done = a.completed_at
+          ? new Date(a.completed_at).toLocaleString('fr-FR')
+          : '—'
+        return `<tr>
+      <td>${esc(a.student?.name)}</td>
+      <td style="font-family:monospace;font-size:10px">${esc(a.student?.registration_number || '—')}</td>
+      <td style="text-align:center;font-weight:600">${esc(scoreStr)}/${esc(String(q.total_points ?? ''))}</td>
+      <td style="text-align:center"><span class="badge">${esc(statusLbl)}</span></td>
+      <td style="text-align:center">${esc(String(a.correct_count ?? '—'))}/${esc(String(a.total_questions ?? '—'))}</td>
+      <td style="font-size:11px;color:#374151">${esc(done)}</td>
+    </tr>`
+      })
+      .join('') ||
+    `<tr><td colspan="6" style="text-align:center;color:#6b7280">Aucune tentative</td></tr>`
+
+  const avg =
+    typeof st.average_score === 'number'
+      ? st.average_score.toFixed(1)
+      : '—'
+  const hi =
+    typeof st.highest_score === 'number'
+      ? st.highest_score.toFixed(1)
+      : '—'
+  const lo =
+    typeof st.lowest_score === 'number'
+      ? st.lowest_score.toFixed(1)
+      : '—'
+  const pr =
+    typeof st.pass_rate === 'number' ? `${st.pass_rate.toFixed(0)} %` : '—'
+
+  return `
+    <div class="info-box">
+      <strong>Cours :</strong> ${esc(courseName || '—')}
+      &nbsp;·&nbsp; <strong>Seuil :</strong> ${esc(String(q.passing_score ?? '—'))} / ${esc(String(q.total_points ?? '—'))} pts
+    </div>
+    <div class="summary-row">
+      <div class="summary-cell"><div class="summary-lbl">Tentatives</div><div class="summary-val">${esc(String(st.total_attempts ?? 0))}</div></div>
+      <div class="summary-cell"><div class="summary-lbl">Moyenne</div><div class="summary-val">${esc(avg)}</div></div>
+      <div class="summary-cell"><div class="summary-lbl">Maximum</div><div class="summary-val">${esc(hi)}</div></div>
+      <div class="summary-cell"><div class="summary-lbl">Minimum</div><div class="summary-val">${esc(lo)}</div></div>
+      <div class="summary-cell"><div class="summary-lbl">Taux de réussite</div><div class="summary-val">${esc(pr)}</div></div>
+    </div>
+    <div class="section-title">Détail des tentatives</div>
+    <table>
+      <thead><tr>
+        <th>Étudiant</th>
+        <th>Matricule</th>
+        <th style="text-align:center">Score</th>
+        <th style="text-align:center">Statut</th>
+        <th style="text-align:center">Bonnes réponses</th>
+        <th>Terminé le</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `
+}

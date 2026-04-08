@@ -40,17 +40,20 @@ const QuizResultModal = ({ result, quiz, onClose }) => {
         animate={{ opacity: 1, scale: 1 }}
         className="bg-white dark:bg-dark-300 rounded-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col"
       >
-        {/* Score Banner */}
-        <div className={`p-6 text-center ${passed ? "bg-green-500" : "bg-red-500"}`}>
-          <h2 className="text-2xl font-bold text-white">
+        {/* Score summary — neutre, lisible */}
+        <div className="p-6 text-center border-b border-gray-200 dark:border-dark-100 bg-gray-50 dark:bg-dark-200/80">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
             {passed ? t("elearning_quiz_passed") : t("elearning_quiz_failed")}
-          </h2>
-          <p className="text-5xl font-bold text-white mt-2">
-            {result.score?.toFixed(1)}
-            <span className="text-2xl opacity-70">/{quiz.total_points}</span>
           </p>
-          <p className="text-white/80 mt-1 text-sm">
-            {result.correct_count}/{result.total_questions} {t("elearning_correct_answers")}
+          <p className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mt-2 tabular-nums">
+            {result.score?.toFixed(1)}
+            <span className="text-xl sm:text-2xl font-semibold text-gray-500 dark:text-gray-400">
+              /{quiz.total_points}
+            </span>
+          </p>
+          <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
+            {result.correct_count}/{result.total_questions}{" "}
+            {t("elearning_correct_answers")}
           </p>
         </div>
 
@@ -63,17 +66,17 @@ const QuizResultModal = ({ result, quiz, onClose }) => {
             {result.answers.map((a, i) => (
               <div
                 key={i}
-                className={`p-3 rounded-lg border-2 ${
+                className={`p-3 rounded-xl border ${
                   a.is_correct
-                    ? "border-green-400 bg-green-50 dark:bg-green-900/20"
-                    : "border-red-400 bg-red-50 dark:bg-red-900/20"
+                    ? "border-gray-200 bg-white dark:bg-dark-200/50 dark:border-dark-100"
+                    : "border-gray-300 bg-gray-50/80 dark:bg-dark-200/70 dark:border-dark-100"
                 }`}
               >
                 <div className="flex items-start gap-2">
                   {a.is_correct ? (
-                    <CheckCircleIcon className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                    <CheckCircleIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0 mt-0.5" />
                   ) : (
-                    <XCircleIcon className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <XCircleIcon className="w-5 h-5 text-gray-500 dark:text-gray-400 shrink-0 mt-0.5" />
                   )}
                   <div className="flex-1 text-sm">
                     <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -81,13 +84,7 @@ const QuizResultModal = ({ result, quiz, onClose }) => {
                     </p>
                     <p className="text-gray-600 dark:text-gray-400">
                       <span className="font-medium">{t("elearning_your_answer")}:</span>{" "}
-                      <span
-                        className={
-                          a.is_correct
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-red-600 dark:text-red-400"
-                        }
-                      >
+                      <span className="text-gray-900 dark:text-gray-100">
                         {a.your_answer ?? (
                           <em className="text-gray-400">{t("elearning_no_answer")}</em>
                         )}
@@ -96,7 +93,7 @@ const QuizResultModal = ({ result, quiz, onClose }) => {
                     {!a.is_correct && (
                       <p className="text-gray-600 dark:text-gray-400 mt-1">
                         <span className="font-medium">{t("elearning_correct_answer")}:</span>{" "}
-                        <span className="text-green-600 dark:text-green-400">
+                        <span className="text-gray-800 dark:text-gray-200">
                           {Array.isArray(a.correct_answer)
                             ? a.correct_answer[0]
                             : a.correct_answer}
@@ -196,7 +193,7 @@ const QuizModal = ({ activeQuiz, onFinish }) => {
         className="bg-white dark:bg-dark-300 rounded-2xl w-full max-w-3xl overflow-hidden"
       >
         {/* Quiz Header */}
-        <div className="bg-gradient-to-r from-primary-500 to-primary-600 text-white p-4">
+        <div className="bg-gray-800 dark:bg-dark-100 text-white p-4 border-b border-gray-700/50">
           <div className="flex justify-between items-center">
             <div>
               <h2 className="font-bold text-lg">{activeQuiz.quiz.title}</h2>
@@ -206,7 +203,7 @@ const QuizModal = ({ activeQuiz, onFinish }) => {
             </div>
             <div className="text-right">
               <div
-                className={`text-3xl font-bold font-mono ${timeLeft < 60 ? "text-red-300 animate-pulse" : ""}`}
+                className={`text-3xl font-bold font-mono ${timeLeft < 60 ? "text-amber-200/90 animate-pulse" : ""}`}
               >
                 {formatTime(timeLeft)}
               </div>
@@ -308,7 +305,7 @@ const QuizModal = ({ activeQuiz, onFinish }) => {
                   currentQuestion === i
                     ? "bg-primary-500 text-white"
                     : quizAnswers[activeQuiz.questions[i].id]
-                      ? "bg-green-500 text-white"
+                      ? "bg-gray-600 text-white dark:bg-gray-500"
                       : "bg-gray-200 dark:bg-dark-100 text-gray-600 dark:text-gray-400"
                 }`}
               >
@@ -334,7 +331,7 @@ const QuizModal = ({ activeQuiz, onFinish }) => {
             <button
               onClick={submitQuizFn}
               disabled={isSubmitting}
-              className="px-6 py-2 rounded-lg bg-green-500 text-white font-medium hover:bg-green-600 transition-colors disabled:opacity-50"
+              className="px-6 py-2 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
             >
               {isSubmitting ? "..." : t("elearning_submit_quiz")}
             </button>
@@ -889,11 +886,11 @@ const StudentELearning = () => {
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div
-                            className={`p-3 rounded-xl ${course.status === "live" ? "bg-red-100 dark:bg-red-900/30 text-red-600" : "bg-blue-100 dark:bg-blue-900/30 text-blue-600"}`}
+                            className={`p-3 rounded-xl border border-gray-200/80 dark:border-dark-100 ${course.status === "live" ? "bg-gray-100 dark:bg-dark-200 text-gray-800 dark:text-gray-200" : "bg-gray-50 dark:bg-dark-200/80 text-gray-700 dark:text-gray-300"}`}
                           >
                             {course.status === "live" ? (
                               <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                <span className="w-2 h-2 bg-primary-500 rounded-full animate-pulse" />
                                 <VideoCameraIcon className="w-5 h-5" />
                               </div>
                             ) : (
@@ -901,12 +898,12 @@ const StudentELearning = () => {
                             )}
                           </div>
                           <span
-                            className={`text-xs font-medium px-3 py-1 rounded-full ${
+                            className={`text-xs font-medium px-3 py-1 rounded-full border border-gray-200 dark:border-dark-100 ${
                               course.status === "scheduled"
-                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                ? "bg-gray-50 text-gray-700 dark:bg-dark-200 dark:text-gray-300"
                                 : course.status === "live"
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                  : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                                  ? "bg-primary-500/10 text-gray-800 dark:text-gray-200"
+                                  : "bg-gray-100 text-gray-700 dark:bg-dark-100 dark:text-gray-400"
                             }`}
                           >
                             {course.status === "scheduled"
@@ -951,7 +948,7 @@ const StudentELearning = () => {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => joinCourse(course.id)}
-                            className="w-full py-3 bg-red-500 text-white rounded-xl font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
                           >
                             <VideoCameraIcon className="w-5 h-5" />
                             {t("elearning_join_course")}
@@ -1087,7 +1084,7 @@ const StudentELearning = () => {
                           <ClipboardDocumentListIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                         </div>
                         {quiz.my_attempts > 0 && (
-                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          <span className="text-xs font-medium px-2 py-1 rounded-full border border-gray-200 dark:border-dark-100 bg-gray-50 text-gray-700 dark:bg-dark-200 dark:text-gray-300">
                             {t("elearning_score")}: {quiz.best_score?.toFixed(1)}/
                             {quiz.total_points}
                           </span>
@@ -1210,20 +1207,20 @@ const StudentELearning = () => {
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-4 flex-1">
                           <div
-                            className={`p-3 rounded-xl ${
+                            className={`p-3 rounded-xl border border-gray-200/80 dark:border-dark-100 ${
                               hasSubmitted
-                                ? "bg-green-100 dark:bg-green-900/30"
+                                ? "bg-gray-50 dark:bg-dark-200/50"
                                 : isOverdue
-                                  ? "bg-red-100 dark:bg-red-900/30"
-                                  : "bg-orange-100 dark:bg-orange-900/30"
+                                  ? "bg-gray-100 dark:bg-dark-200/70"
+                                  : "bg-gray-50 dark:bg-dark-200/50"
                             }`}
                           >
                             {hasSubmitted ? (
-                              <CheckCircleIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                              <CheckCircleIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                             ) : isOverdue ? (
-                              <ExclamationTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
+                              <ExclamationTriangleIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                             ) : (
-                              <FolderOpenIcon className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                              <FolderOpenIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
                             )}
                           </div>
                           <div className="flex-1">
@@ -1241,7 +1238,7 @@ const StudentELearning = () => {
                               <span
                                 className={
                                   isOverdue && !hasSubmitted
-                                    ? "text-red-500"
+                                    ? "text-gray-700 dark:text-gray-300 font-medium"
                                     : "text-gray-500"
                                 }
                               >
@@ -1254,7 +1251,7 @@ const StudentELearning = () => {
                                 })}
                               </span>
                               {hasSubmitted && (
-                                <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                                <span className="text-gray-700 dark:text-gray-300 flex items-center gap-1">
                                   <CheckCircleIcon className="w-4 h-4" />
                                   {t("elearning_submitted")}
                                   {hasSubmitted.grade !== null &&
@@ -1282,7 +1279,7 @@ const StudentELearning = () => {
                               {t("elearning_view_submission")}
                             </button>
                           ) : (
-                            <span className="text-sm text-red-500">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
                               {t("elearning_deadline_passed")}
                             </span>
                           )}
@@ -1370,11 +1367,11 @@ const StudentELearning = () => {
                 )}
                 {/* Grade & feedback */}
                 {showViewSubmissionModal.submission?.grade !== null && showViewSubmissionModal.submission?.grade !== undefined && (
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                    <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wider mb-1">{t("elearning_grade")}</p>
-                    <p className="text-2xl font-bold text-green-700 dark:text-green-400">{showViewSubmissionModal.submission.grade} / {showViewSubmissionModal.assignment.total_points}</p>
+                  <div className="p-4 bg-gray-50 dark:bg-dark-200/80 rounded-xl border border-gray-200 dark:border-dark-100">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">{t("elearning_grade")}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">{showViewSubmissionModal.submission.grade} / {showViewSubmissionModal.assignment.total_points}</p>
                     {showViewSubmissionModal.submission?.feedback && (
-                      <p className="text-sm text-green-700 dark:text-green-300 mt-2">{showViewSubmissionModal.submission.feedback}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{showViewSubmissionModal.submission.feedback}</p>
                     )}
                   </div>
                 )}
