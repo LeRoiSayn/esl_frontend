@@ -12,7 +12,7 @@ const emptyFee  = { student_id: '', fee_type_id: '', amount: '', due_date: '', a
 const emptyPlan = { plan_type: 'monthly', periods: 3, start_date: '' }
 
 export default function FinanceStudentFees() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
 
   // ── Data ──────────────────────────────────────────────────────
   const [fees, setFees]               = useState([])
@@ -74,7 +74,7 @@ export default function FinanceStudentFees() {
   }, [fees])
 
   // ── Helpers ──────────────────────────────────────────────────
-  const fmt = (v) => new Intl.NumberFormat('fr-FR').format(v || 0) + ' RWF'
+  const fmt = (v) => new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR').format(v || 0) + ' RWF'
   const isReg = (f) => f.fee_type?.category === 'registration'
   const bal   = (f) => parseFloat(f.amount || 0) - parseFloat(f.paid_amount || 0)
 
@@ -130,13 +130,13 @@ export default function FinanceStudentFees() {
     setPlanSaving(true)
     try {
       const res = await studentFeeApi.setInstallmentPlan(planFeeId, planData)
-      toast.success(`Plan défini — ${planData.periods} tranches`)
+      toast.success(t('plan_defined_success').replace('{n}', planData.periods))
       const updated = res.data.data
       setFees(prev => prev.map(f => f.id === updated.id ? { ...f, installment_plan: updated.installment_plan } : f))
       await refreshDetail()
       setPlanFeeId(null)
       setPlanData(emptyPlan)
-    } catch (err) { toast.error(err.response?.data?.message || 'Erreur') }
+    } catch (err) { toast.error(err.response?.data?.message || t('error')) }
     finally { setPlanSaving(false) }
   }
 
@@ -153,7 +153,7 @@ export default function FinanceStudentFees() {
       if (detailData && String(formData.student_id) === String(detailData.student.id)) {
         await refreshDetail()
       }
-    } catch (err) { toast.error(err.response?.data?.message || 'Erreur') }
+    } catch (err) { toast.error(err.response?.data?.message || t('error')) }
     finally { setSaving(false) }
   }
 
@@ -172,7 +172,7 @@ export default function FinanceStudentFees() {
   // ── Table columns (student-centric) ───────────────────────────
   const columns = [
     {
-      header: 'Étudiant',
+      header: t('student'),
       accessor: row => `${row.student?.user?.first_name} ${row.student?.user?.last_name}`,
       cell: row => (
         <div className="flex items-center gap-3">
@@ -186,19 +186,19 @@ export default function FinanceStudentFees() {
         </div>
       ),
     },
-    { header: 'Niveau', accessor: row => row.student?.level },
+    { header: t('level'), accessor: row => row.student?.level },
     {
-      header: 'Inscription',
+      header: t('registration_fee'),
       cell: row => {
         const { reg } = summary(row)
         if (!reg) return <span className="text-xs text-gray-400">—</span>
         return bal(reg) <= 0
-          ? <span className="badge badge-success text-xs">Payé</span>
-          : <span className="badge badge-danger text-xs">Impayé</span>
+          ? <span className="badge badge-success text-xs">{t('paid')}</span>
+          : <span className="badge badge-danger text-xs">{t('unpaid')}</span>
       },
     },
     {
-      header: 'Solde scolarité',
+      header: t('tuition_balance_col'),
       cell: row => {
         const s = summary(row)
         return (
@@ -210,21 +210,21 @@ export default function FinanceStudentFees() {
       },
     },
     {
-      header: 'Plan',
+      header: t('installment_plan'),
       cell: row => {
         const { hasPlan, tuition } = summary(row)
         if (!hasPlan) return <span className="text-xs text-gray-400">—</span>
         const pf = tuition.find(f => f.installment_plan)
-        return <span className="badge badge-info text-xs">{pf?.installment_plan?.periods} tranches</span>
+        return <span className="badge badge-info text-xs">{pf?.installment_plan?.periods} {t('installments')}</span>
       },
     },
     {
-      header: 'Statut',
+      header: t('status'),
       cell: row => {
         const s = summary(row)
-        if (s.balance <= 0 && (!s.reg || bal(s.reg) <= 0)) return <span className="badge badge-success">Réglé</span>
-        if (s.balance > 0) return <span className="badge badge-warning">En attente</span>
-        return <span className="badge badge-info">Partiel</span>
+        if (s.balance <= 0 && (!s.reg || bal(s.reg) <= 0)) return <span className="badge badge-success">{t('settled')}</span>
+        if (s.balance > 0) return <span className="badge badge-warning">{t('pending')}</span>
+        return <span className="badge badge-info">{t('partial')}</span>
       },
     },
   ]
@@ -234,11 +234,11 @@ export default function FinanceStudentFees() {
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">Frais des étudiants</h1>
-          <p className="text-gray-500 dark:text-gray-400">Cliquez sur un étudiant pour gérer ses frais et paiements</p>
+          <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">{t('student_fees_title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t('student_fees_subtitle')}</p>
         </div>
         <button onClick={() => { setAssignOpen(true); fetchStudentsOnce() }} className="btn-primary flex items-center gap-2">
-          <PlusIcon className="w-5 h-5" /> Assigner frais
+          <PlusIcon className="w-5 h-5" /> {t('assign_fee')}
         </button>
       </motion.div>
 
@@ -247,13 +247,13 @@ export default function FinanceStudentFees() {
           columns={columns}
           data={studentRows}
           loading={loading}
-          searchPlaceholder="Rechercher..."
+          searchPlaceholder={t('search')}
           onRowClick={openDetail}
         />
       </motion.div>
 
       {/* ══ Student detail modal ══ */}
-      <Modal isOpen={detailOpen} onClose={closeDetail} title="Dossier financier" size="xl">
+      <Modal isOpen={detailOpen} onClose={closeDetail} title={t('financial_file')} size="xl">
         {detailLoading ? (
           <div className="flex items-center justify-center py-16">
             <div className="w-7 h-7 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
@@ -270,7 +270,7 @@ export default function FinanceStudentFees() {
                 <p className="text-lg font-bold text-gray-900 dark:text-white">
                   {detailData.student?.user?.first_name} {detailData.student?.user?.last_name}
                 </p>
-                <p className="text-sm text-gray-500">{detailData.student?.student_id} · Niveau {detailData.student?.level}</p>
+                <p className="text-sm text-gray-500">{detailData.student?.student_id} · {t('level')} {detailData.student?.level}</p>
               </div>
             </div>
 
@@ -281,17 +281,17 @@ export default function FinanceStudentFees() {
               const b = bal(regFee)
               return (
                 <section>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Frais d'inscription</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">{t('registration_fee')}</p>
                   <div className="flex items-center justify-between px-4 py-3 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/10">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{regFee.fee_type?.name}</p>
-                      <p className="text-xs text-amber-700 dark:text-amber-400">Non inclus dans le total de scolarité</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-400">{t('not_included_in_tuition_total')}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900 dark:text-white">{fmt(regFee.amount)}</p>
                       {b <= 0
-                        ? <p className="text-xs text-green-600">Payé intégralement</p>
-                        : <p className="text-xs text-red-600 font-medium">Solde dû : {fmt(b)}</p>
+                        ? <p className="text-xs text-green-600">{t('paid_in_full')}</p>
+                        : <p className="text-xs text-red-600 font-medium">{t('balance_due')}: {fmt(b)}</p>
                       }
                     </div>
                   </div>
@@ -305,7 +305,7 @@ export default function FinanceStudentFees() {
               if (tuition.length === 0) return null
               return (
                 <section>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Frais de scolarité</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">{t('tuition_fees')}</p>
                   <div className="space-y-4">
                     {tuition.map(fee => {
                       const b          = bal(fee)
@@ -319,26 +319,26 @@ export default function FinanceStudentFees() {
                             <div>
                               <p className="font-semibold text-gray-900 dark:text-white">{fee.fee_type?.name}</p>
                               <p className="text-xs text-gray-500 mt-0.5">
-                                Total {fmt(fee.amount)} · Payé <span className="text-green-600">{fmt(fee.paid_amount)}</span>
-                                {b > 0 && <> · Solde <span className="text-red-600 font-semibold">{fmt(b)}</span></>}
+                                {t('total')} {fmt(fee.amount)} · {t('paid')} <span className="text-green-600">{fmt(fee.paid_amount)}</span>
+                                {b > 0 && <> · {t('balance')} <span className="text-red-600 font-semibold">{fmt(b)}</span></>}
                               </p>
                             </div>
                             {b <= 0
-                              ? <span className="badge badge-success text-xs">Soldé</span>
-                              : <span className="badge badge-warning text-xs">En attente</span>
+                              ? <span className="badge badge-success text-xs">{t('settled')}</span>
+                              : <span className="badge badge-warning text-xs">{t('pending')}</span>
                             }
                           </div>
 
                           {/* Plan section */}
                           <div className="px-4 py-3">
                             <div className="flex items-center justify-between mb-2">
-                              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Plan de paiement par tranches</p>
+                              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">{t('installment_plan')}</p>
                               {b > 0 && (
                                 <button
                                   onClick={() => { setPlanFeeId(isPlanning ? null : fee.id); setPlanData(emptyPlan) }}
                                   className="text-xs text-primary-600 hover:text-primary-700 border border-primary-200 rounded px-2 py-0.5 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors"
                                 >
-                                  {fee.installment_plan ? 'Modifier' : '+ Définir'}
+                                  {fee.installment_plan ? t('edit') : t('define_plan')}
                                 </button>
                               )}
                             </div>
@@ -348,29 +348,29 @@ export default function FinanceStudentFees() {
                               <form onSubmit={handlePlanSubmit} className="mb-3 p-3 rounded-xl bg-gray-50 dark:bg-dark-300 border border-gray-200 dark:border-dark-100 space-y-3">
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
-                                    <label className="label text-xs">Type</label>
+                                    <label className="label text-xs">{t('type')}</label>
                                     <select value={planData.plan_type} onChange={e => setPlanData(p => ({ ...p, plan_type: e.target.value }))} className="input text-sm">
-                                      <option value="monthly">Mensuel</option>
-                                      <option value="quarterly">Trimestriel</option>
+                                      <option value="monthly">{t('monthly_plan')}</option>
+                                      <option value="quarterly">{t('quarterly_plan')}</option>
                                     </select>
                                   </div>
                                   <div>
-                                    <label className="label text-xs">Tranches</label>
+                                    <label className="label text-xs">{t('installments')}</label>
                                     <input type="number" value={planData.periods} onChange={e => setPlanData(p => ({ ...p, periods: parseInt(e.target.value) || 2 }))} className="input text-sm" min="2" max="24" required />
                                   </div>
                                 </div>
                                 <div>
-                                  <label className="label text-xs">Date de la 1ère tranche</label>
+                                  <label className="label text-xs">{t('first_installment_date')}</label>
                                   <input type="date" value={planData.start_date} onChange={e => setPlanData(p => ({ ...p, start_date: e.target.value }))} className="input text-sm" required />
                                 </div>
                                 {planPreview > 0 && (
                                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                                    ≈ {fmt(planPreview)} × {planData.periods} tranches ({planData.plan_type === 'monthly' ? 'mensuel' : 'trimestriel'})
+                                    ≈ {fmt(planPreview)} × {planData.periods} {t('installments')} ({planData.plan_type === 'monthly' ? t('monthly_plan') : t('quarterly_plan')})
                                   </p>
                                 )}
                                 <div className="flex gap-2">
-                                  <button type="button" onClick={() => setPlanFeeId(null)} className="btn-secondary text-xs flex-1">Annuler</button>
-                                  <button type="submit" disabled={planSaving} className="btn-primary text-xs flex-1">{planSaving ? '...' : 'Confirmer le plan'}</button>
+                                  <button type="button" onClick={() => setPlanFeeId(null)} className="btn-secondary text-xs flex-1">{t('cancel')}</button>
+                                  <button type="submit" disabled={planSaving} className="btn-primary text-xs flex-1">{planSaving ? t('saving') : t('confirm_plan')}</button>
                                 </div>
                               </form>
                             )}
@@ -379,22 +379,25 @@ export default function FinanceStudentFees() {
                             {instRows.length > 0 ? (
                               <div className="space-y-1">
                                 <p className="text-xs text-gray-400 mb-1.5">
-                                  Plan {fee.installment_plan.plan_type === 'monthly' ? 'mensuel' : 'trimestriel'} — {fee.installment_plan.periods} tranches
+                                  {t('installment_plan_label')
+                                    .replace('{plan}', fee.installment_plan.plan_type === 'monthly' ? t('monthly_plan') : t('quarterly_plan'))
+                                    .replace('{n}', fee.installment_plan.periods)
+                                  }
                                 </p>
                                 {instRows.map(inst => (
                                   <div key={inst.number} className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${inst.isPaid ? 'bg-green-50 dark:bg-green-900/10' : 'bg-gray-50 dark:bg-dark-300'}`}>
                                     <span className={inst.isPaid ? 'text-green-700 dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}>
-                                      Tranche {inst.number} · {new Date(inst.due_date).toLocaleDateString('fr-FR')}
+                                      {t('installment_number_short').replace('{n}', inst.number)} · {new Date(inst.due_date).toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR')}
                                     </span>
                                     <span className={`font-semibold ${inst.isPaid ? 'text-green-600' : inst.leftover > 0 ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'}`}>
                                       {inst.isPaid ? `${fmt(inst.amount)}` : fmt(inst.leftover)}
-                                      {!inst.isPaid && inst.leftover > 0 && <span className="text-gray-400 font-normal"> restant</span>}
+                                      {!inst.isPaid && inst.leftover > 0 && <span className="text-gray-400 font-normal"> {t('installment_remaining')}</span>}
                                     </span>
                                   </div>
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-xs text-gray-400 italic">Aucun plan défini — paiement en une fois.</p>
+                              <p className="text-xs text-gray-400 italic">{t('no_plan_defined_short')}</p>
                             )}
                           </div>
                         </div>
@@ -413,19 +416,19 @@ export default function FinanceStudentFees() {
 
               return (
                 <section>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Historique des paiements</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">{t('payment_history')}</p>
                   {allPayments.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic text-center py-6">Aucun paiement enregistré.</p>
+                    <p className="text-sm text-gray-400 italic text-center py-6">{t('no_payments_recorded')}</p>
                   ) : (
                     <div className="rounded-xl border border-gray-200 dark:border-dark-100 overflow-hidden">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="bg-gray-50 dark:bg-dark-300 text-xs text-gray-500 dark:text-gray-400">
-                            <th className="px-4 py-2.5 text-left font-medium">Référence</th>
-                            <th className="px-4 py-2.5 text-left font-medium">Type de frais</th>
-                            <th className="px-4 py-2.5 text-left font-medium">Méthode</th>
-                            <th className="px-4 py-2.5 text-left font-medium">Date</th>
-                            <th className="px-4 py-2.5 text-right font-medium">Montant</th>
+                            <th className="px-4 py-2.5 text-left font-medium">{t('reference')}</th>
+                            <th className="px-4 py-2.5 text-left font-medium">{t('fee_type')}</th>
+                            <th className="px-4 py-2.5 text-left font-medium">{t('method')}</th>
+                            <th className="px-4 py-2.5 text-left font-medium">{t('date')}</th>
+                            <th className="px-4 py-2.5 text-right font-medium">{t('amount')}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-dark-100">
@@ -434,7 +437,7 @@ export default function FinanceStudentFees() {
                               <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{p.reference_number}</td>
                               <td className="px-4 py-2.5 text-gray-700 dark:text-gray-300">{p.feeName}</td>
                               <td className="px-4 py-2.5 text-gray-500 capitalize">{p.payment_method?.replace(/_/g, ' ')}</td>
-                              <td className="px-4 py-2.5 text-gray-500">{new Date(p.payment_date).toLocaleDateString('fr-FR')}</td>
+                              <td className="px-4 py-2.5 text-gray-500">{new Date(p.payment_date).toLocaleDateString(language === 'en' ? 'en-US' : 'fr-FR')}</td>
                               <td className="px-4 py-2.5 text-right font-semibold text-green-600">+{fmt(p.amount)}</td>
                             </tr>
                           ))}
@@ -450,37 +453,37 @@ export default function FinanceStudentFees() {
       </Modal>
 
       {/* ══ Assign fee modal ══ */}
-      <Modal isOpen={assignOpen} onClose={() => { setAssignOpen(false); setFormData(emptyFee) }} title="Assigner un frais">
+      <Modal isOpen={assignOpen} onClose={() => { setAssignOpen(false); setFormData(emptyFee) }} title={t('assign_fee')}>
         <form onSubmit={handleAssignSubmit} className="space-y-4">
           <div>
-            <label className="label">Étudiant</label>
+            <label className="label">{t('student')}</label>
             <select value={formData.student_id} onChange={e => setFormData(p => ({ ...p, student_id: e.target.value }))} className="input" required disabled={studentsLoading}>
-              <option value="">{studentsLoading ? 'Chargement…' : 'Sélectionner un étudiant'}</option>
+              <option value="">{studentsLoading ? t('loading') : t('select_student')}</option>
               {students.map(s => <option key={s.id} value={s.id}>{s.user?.first_name} {s.user?.last_name} ({s.student_id})</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Type de frais</label>
+            <label className="label">{t('fee_type')}</label>
             <select value={formData.fee_type_id} onChange={e => handleFeeTypeChange(e.target.value)} className="input" required>
-              <option value="">Sélectionner un type</option>
+              <option value="">{t('select')}</option>
               {feeTypes.map(f => <option key={f.id} value={f.id}>{f.name} ({fmt(f.amount)})</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Montant (RWF)</label>
+            <label className="label">{t('amount')} (RWF)</label>
             <input type="number" value={formData.amount} onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))} className="input" required min="0" />
           </div>
           <div>
-            <label className="label">Date d'échéance</label>
+            <label className="label">{t('due_date')}</label>
             <input type="date" value={formData.due_date} onChange={e => setFormData(p => ({ ...p, due_date: e.target.value }))} className="input" required />
           </div>
           <div>
-            <label className="label">Année académique</label>
+            <label className="label">{t('academic_year')}</label>
             <input type="text" value={formData.academic_year} onChange={e => setFormData(p => ({ ...p, academic_year: e.target.value }))} className="input" required />
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={() => { setAssignOpen(false); setFormData(emptyFee) }} className="btn-secondary">Annuler</button>
-            <button type="submit" disabled={saving} className="btn-primary">{saving ? 'Enregistrement...' : 'Assigner'}</button>
+            <button type="button" onClick={() => { setAssignOpen(false); setFormData(emptyFee) }} className="btn-secondary">{t('cancel')}</button>
+            <button type="submit" disabled={saving} className="btn-primary">{saving ? t('saving') : t('assign')}</button>
           </div>
         </form>
       </Modal>
