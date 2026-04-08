@@ -156,6 +156,31 @@ export function openReport(title, subtitle, body) {
   return true
 }
 
+/**
+ * Fallback: render the report in the current tab.
+ * This avoids browser pop-up permissions entirely.
+ */
+export function openReportInCurrentTab(title, subtitle, body) {
+  try {
+    document.open()
+    document.write(buildReportDocumentHtml(title, subtitle, body))
+    document.close()
+    try {
+      window.scrollTo(0, 0)
+    } catch (_) {}
+    return true
+  } catch (_) {
+    return false
+  }
+}
+
+/**
+ * Prefer new tab, fallback to current tab.
+ */
+export function openReportSafe(title, subtitle, body) {
+  return openReport(title, subtitle, body) || openReportInCurrentTab(title, subtitle, body)
+}
+
 const LOADING_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">${VIEWPORT_META}<title>…</title></head><body style="font-family:system-ui,sans-serif;padding:24px;text-align:center;color:#374151">Chargement…</body></html>`
 
 /**
@@ -180,6 +205,31 @@ export async function openReportAsync(title, load) {
     try {
       w.close()
     } catch (_) {}
+    throw e
+  }
+  return true
+}
+
+/**
+ * Async report: if pop-up is blocked, render in current tab after load().
+ */
+export async function openReportAsyncSafe(title, load) {
+  const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
+  if (!w) {
+    const { subtitle, body } = await load()
+    return openReportInCurrentTab(title, subtitle, body)
+  }
+  try {
+    w.document.open()
+    w.document.write(LOADING_HTML)
+    w.document.close()
+    const { subtitle, body } = await load()
+    w.document.open()
+    w.document.write(buildReportDocumentHtml(title, subtitle, body))
+    w.document.close()
+    try { w.focus() } catch (_) {}
+  } catch (e) {
+    try { w.close() } catch (_) {}
     throw e
   }
   return true

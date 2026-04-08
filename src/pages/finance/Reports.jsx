@@ -4,7 +4,7 @@ import toast from 'react-hot-toast'
 import { ChartBarIcon, UserGroupIcon, DocumentTextIcon, PrinterIcon } from '@heroicons/react/24/outline'
 import { dashboardApi, paymentApi, studentFeeApi, feeTypeApi } from '../../services/api'
 import { useI18n } from '../../i18n/index.jsx'
-import { esc, fmtRwf, openReportAsync } from '../../utils/reportPrint'
+import { esc, fmtRwf, openReportAsyncSafe } from '../../utils/reportPrint'
 
 function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGenerate, loading, delay = 0 }) {
   const { t } = useI18n()
@@ -48,7 +48,7 @@ export default function FinanceReports() {
   const handleGlobal = async () => {
     setLoadingGlobal(true)
     try {
-      if (!(await openReportAsync(t('finance_report_global_title'), async () => {
+      await openReportAsyncSafe(t('finance_report_global_title'), async () => {
         const [statsRes, paymentsRes] = await Promise.all([
           dashboardApi.getFinanceStats(),
           paymentApi.getAll({ per_page: 500 }),
@@ -100,9 +100,7 @@ export default function FinanceReports() {
         <table><thead><tr><th>Référence</th><th>Étudiant</th><th>Méthode</th><th>Date</th><th style="text-align:right">Montant</th></tr></thead>
         <tbody>${recentRows}</tbody></table>`
         return { subtitle: t('finance_report_global_subtitle'), body }
-      }))) {
-        toast.error(t('popup_blocked'))
-      }
+      })
     } catch {
       toast.error(t('error'))
     } finally {
@@ -114,7 +112,7 @@ export default function FinanceReports() {
   const handleStudents = async () => {
     setLoadingStudents(true)
     try {
-      if (!(await openReportAsync(t('finance_report_by_student_title'), async () => {
+      await openReportAsyncSafe(t('finance_report_by_student_title'), async () => {
         const res = await studentFeeApi.getAll({ per_page: 2000 })
         const fees = res.data?.data?.data || res.data?.data || []
 
@@ -160,9 +158,7 @@ export default function FinanceReports() {
         <th style="text-align:center">Statut</th>
       </tr></thead><tbody>${rows}</tbody></table>`
         return { subtitle: t('finance_report_by_student_subtitle'), body }
-      }))) {
-        toast.error(t('popup_blocked'))
-      }
+      })
     } catch {
       toast.error(t('error'))
     } finally {
@@ -174,7 +170,7 @@ export default function FinanceReports() {
   const handleFeeTypes = async () => {
     setLoadingFeeTypes(true)
     try {
-      if (!(await openReportAsync(t('finance_report_by_fee_type_title'), async () => {
+      await openReportAsyncSafe(t('finance_report_by_fee_type_title'), async () => {
         const [typesRes, feesRes] = await Promise.all([
           feeTypeApi.getAll({ per_page: 200 }),
           studentFeeApi.getAll({ per_page: 2000 }),
@@ -208,9 +204,7 @@ export default function FinanceReports() {
         <th style="text-align:center">Taux</th>
       </tr></thead><tbody>${rows}</tbody></table>`
         return { subtitle: t('finance_report_by_fee_type_subtitle'), body }
-      }))) {
-        toast.error(t('popup_blocked'))
-      }
+      })
     } catch {
       toast.error(t('error'))
     } finally {

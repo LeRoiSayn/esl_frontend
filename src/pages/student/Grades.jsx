@@ -192,7 +192,11 @@ export default function StudentGrades() {
     const url = URL.createObjectURL(blob)
     const pw = window.open(url, '_blank')
     if (pw) setTimeout(() => URL.revokeObjectURL(url), 60000)
-    else { URL.revokeObjectURL(url); toast.error(t('popup_blocked')) }
+    else {
+      // Fallback: open in same tab (no pop-up permissions needed)
+      window.location.assign(url)
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    }
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>

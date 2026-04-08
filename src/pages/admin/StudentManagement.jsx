@@ -17,7 +17,7 @@ import {
   ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
 import api, { courseApi } from "../../services/api";
-import { openReportAsync, esc as escReport } from "../../utils/reportPrint";
+import { openReportAsyncSafe, esc as escReport } from "../../utils/reportPrint";
 import { useI18n } from "../../i18n/index.jsx";
 
 const StudentManagement = () => {
@@ -191,7 +191,7 @@ const StudentManagement = () => {
   const openAcademicReport = async () => {
     if (!selectedStudent) return alert(t("select_student"));
     try {
-      if (!(await openReportAsync(t("student_report_academic_title"), async () => {
+      await openReportAsyncSafe(t("student_report_academic_title"), async () => {
         const deptId = selectedStudent.student.department?.id;
         const res = await courseApi.getAll({ department_id: deptId, per_page: 1000 });
         const data = res.data.data || res.data;
@@ -199,8 +199,7 @@ const StudentManagement = () => {
         const fullName = `${selectedStudent.student.user?.first_name || ''} ${selectedStudent.student.user?.last_name || ''}`.trim();
         const body = generateAcademicReportBody(selectedStudent, courses);
         return { subtitle: `${t("student_report_academic_subtitle_prefix")} ${fullName}`, body };
-      })))
-        alert(t("popup_blocked"));
+      })
       setShowReportDropdown(false);
     } catch (e) {
       console.error(e);
@@ -211,7 +210,7 @@ const StudentManagement = () => {
   const openFinancialReport = async () => {
     if (!selectedStudent) return alert(t("select_student"));
     try {
-      if (!(await openReportAsync(t("student_report_financial_title"), async () => {
+      await openReportAsyncSafe(t("student_report_financial_title"), async () => {
         const payments = [];
         const fees = selectedStudent.student?.fees || selectedStudent.fees || [];
         fees.forEach((f) => { if (f.payments) f.payments.forEach((p) => payments.push(p)) });
@@ -220,8 +219,7 @@ const StudentManagement = () => {
         const fullName = `${selectedStudent.student.user?.first_name || ''} ${selectedStudent.student.user?.last_name || ''}`.trim();
         const body = generateFinancialReportBody(selectedStudent, payments);
         return { subtitle: `${t("student_report_financial_subtitle_prefix")} ${fullName}`, body };
-      })))
-        alert(t("popup_blocked"));
+      })
       setShowReportDropdown(false);
     } catch (e) {
       console.error(e);

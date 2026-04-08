@@ -8,7 +8,7 @@ import {
 import { dashboardApi, classApi, teacherApi, courseApi, departmentApi } from '../../services/api'
 import StatCard from '../../components/StatCard'
 import { useI18n } from '../../i18n/index.jsx'
-import { esc, openReportAsync } from '../../utils/reportPrint'
+import { esc, openReportAsyncSafe } from '../../utils/reportPrint'
 
 function generateColors(count) {
   const palette = [
@@ -78,7 +78,7 @@ export default function AdminReports() {
   const handleClasses = async () => {
     setLoadingClasses(true)
     try {
-      if (!(await openReportAsync(t('admin_report_classes_title'), async () => {
+      await openReportAsyncSafe(t('admin_report_classes_title'), async () => {
         const res = await classApi.getAll({ per_page: 1000 })
         const classes = res.data?.data?.data || res.data?.data || []
 
@@ -120,9 +120,7 @@ export default function AdminReports() {
           </div>
           ${sections}`
         return { subtitle: t('admin_report_classes_subtitle'), body }
-      }))) {
-        alert(t('popup_blocked'))
-      }
+      })
     } catch {
       alert(t('error'))
     } finally {
@@ -134,7 +132,7 @@ export default function AdminReports() {
   const handleTeachers = async () => {
     setLoadingTeachers(true)
     try {
-      if (!(await openReportAsync(t('admin_report_teachers_title'), async () => {
+      await openReportAsyncSafe(t('admin_report_teachers_title'), async () => {
         const res = await teacherApi.getAll({ per_page: 1000 })
         const teachers = res.data?.data?.data || res.data?.data || []
 
@@ -181,9 +179,7 @@ export default function AdminReports() {
           </div>
           ${sections}`
         return { subtitle: t('admin_report_teachers_subtitle'), body }
-      }))) {
-        alert(t('popup_blocked'))
-      }
+      })
     } catch {
       alert(t('error'))
     } finally {
@@ -195,7 +191,7 @@ export default function AdminReports() {
   const handleCourses = async () => {
     setLoadingCourses(true)
     try {
-      if (!(await openReportAsync(t('admin_report_courses_title'), async () => {
+      await openReportAsyncSafe(t('admin_report_courses_title'), async () => {
         const [coursesRes] = await Promise.all([
           courseApi.getAll({ per_page: 2000 }),
           departmentApi.getAll({ per_page: 200 }),
@@ -242,9 +238,7 @@ export default function AdminReports() {
           </div>
           ${sections}`
         return { subtitle: t('admin_report_courses_subtitle'), body }
-      }))) {
-        alert(t('popup_blocked'))
-      }
+      })
     } catch {
       alert(t('error'))
     } finally {

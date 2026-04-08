@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { registrarApi, studentApi, teacherApi } from '../../services/api'
 import { useI18n } from '../../i18n/index.jsx'
-import { esc, openReportAsync } from '../../utils/reportPrint'
+import { esc, openReportAsyncSafe } from '../../utils/reportPrint'
 
 const ROLES = ['admin', 'finance', 'registrar', 'teacher', 'student']
 const ROLE_LABELS = {
@@ -63,7 +63,7 @@ export default function RegistrarReports() {
   const handleUsers = async () => {
     setLoadingUsers(true)
     try {
-      if (!(await openReportAsync(t('registrar_report_users_title'), async () => {
+      await openReportAsyncSafe(t('registrar_report_users_title'), async () => {
         const results = await Promise.all(ROLES.map(r => registrarApi.getUsers(r)))
         const byRole = {}
         ROLES.forEach((r, i) => {
@@ -103,9 +103,7 @@ export default function RegistrarReports() {
         </div>
         ${sections}`
         return { subtitle: t('registrar_report_users_subtitle'), body }
-      }))) {
-        toast.error(t('popup_blocked'))
-      }
+      })
     } catch {
       toast.error(t('error'))
     } finally {
@@ -117,7 +115,7 @@ export default function RegistrarReports() {
   const handleLevels = async () => {
     setLoadingLevels(true)
     try {
-      if (!(await openReportAsync(t('registrar_report_students_by_level_title'), async () => {
+      await openReportAsyncSafe(t('registrar_report_students_by_level_title'), async () => {
         const res = await studentApi.getAll({ per_page: 2000 })
         const students = res.data?.data?.data || res.data?.data || []
 
@@ -168,9 +166,7 @@ export default function RegistrarReports() {
         </div>
         ${sections}`
         return { subtitle: t('registrar_report_students_by_level_subtitle'), body }
-      }))) {
-        toast.error(t('popup_blocked'))
-      }
+      })
     } catch {
       toast.error(t('error'))
     } finally {
@@ -182,7 +178,7 @@ export default function RegistrarReports() {
   const handleDepts = async () => {
     setLoadingDepts(true)
     try {
-      if (!(await openReportAsync(t('registrar_report_teachers_by_department_title'), async () => {
+      await openReportAsyncSafe(t('registrar_report_teachers_by_department_title'), async () => {
         const res = await teacherApi.getAll({ per_page: 1000 })
         const teachers = res.data?.data?.data || res.data?.data || []
 
@@ -228,9 +224,7 @@ export default function RegistrarReports() {
         </div>
         ${sections}`
         return { subtitle: t('registrar_report_teachers_by_department_subtitle'), body }
-      }))) {
-        toast.error(t('popup_blocked'))
-      }
+      })
     } catch {
       toast.error(t('error'))
     } finally {

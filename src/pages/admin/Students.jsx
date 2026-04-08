@@ -428,7 +428,11 @@ ${yearsHtml}
     const url = URL.createObjectURL(blob)
     const pw = window.open(url, '_blank')
     if (pw) setTimeout(() => URL.revokeObjectURL(url), 60000)
-    else { URL.revokeObjectURL(url); toast.error('Autorisez les pop-ups pour afficher le rapport') }
+    else {
+      // Fallback: open in same tab (no pop-up permissions needed)
+      window.location.assign(url)
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    }
   }
 
   const handleFinancialReport = () => {
@@ -563,7 +567,11 @@ ${paymentsSection}
     const url = URL.createObjectURL(blob)
     const pw = window.open(url, '_blank')
     if (pw) setTimeout(() => URL.revokeObjectURL(url), 60000)
-    else { URL.revokeObjectURL(url); toast.error('Autorisez les pop-ups pour afficher le rapport') }
+    else {
+      // Fallback: open in same tab (no pop-up permissions needed)
+      window.location.assign(url)
+      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    }
   }
 
   if (loading) {
