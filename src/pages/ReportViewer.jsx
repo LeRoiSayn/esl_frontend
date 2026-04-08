@@ -27,10 +27,10 @@ export default function ReportViewer() {
       // Poll briefly because the opener tab may still be fetching data.
       for (let i = 0; i < 80; i++) {
         if (cancelled) return
-        const html = sessionStorage.getItem(storageKey)
+        const html = localStorage.getItem(storageKey)
         if (html) {
           try {
-            sessionStorage.removeItem(storageKey)
+            localStorage.removeItem(storageKey)
           } catch (_) {}
           setSrcDoc(html)
           return
@@ -79,7 +79,7 @@ export default function ReportViewer() {
       <div className="card p-6 max-w-md w-full text-center">
         <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
         <h1 className="text-base font-semibold text-gray-900 dark:text-white mt-4">
-          {t('generating')}
+          {t('loading')}
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           {t('report_opening')}

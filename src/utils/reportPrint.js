@@ -154,7 +154,7 @@ export function openReport(title, subtitle, body) {
   if (!w) return false
   try {
     const html = buildReportDocumentHtml(title, subtitle, body)
-    sessionStorage.setItem(`esl_report:${key}`, html)
+    localStorage.setItem(`esl_report:${key}`, html)
     try {
       w.focus()
     } catch (_) {}
@@ -174,7 +174,7 @@ export async function openReportAsync(title, load) {
   if (!w) return false
   const { subtitle, body } = await load()
   const html = buildReportDocumentHtml(title, subtitle, body)
-  sessionStorage.setItem(`esl_report:${key}`, html)
+  localStorage.setItem(`esl_report:${key}`, html)
   try {
     w.focus()
   } catch (_) {}
