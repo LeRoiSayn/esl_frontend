@@ -24,11 +24,43 @@ export default function ReportViewer() {
         return
       }
 
+      // Best-effort cleanup: remove stale report payloads (older than 10 minutes).
+      try {
+        const now = Date.now()
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i)
+          if (!k || !k.startsWith('esl_report:')) continue
+          const v = localStorage.getItem(k)
+          if (!v) continue
+          try {
+            const parsed = JSON.parse(v)
+            const ts = parsed?.createdAt
+            if (typeof ts === 'number' && now - ts > 10 * 60 * 1000) {
+              localStorage.removeItem(k)
+            }
+          } catch (_) {
+            // ignore
+          }
+        }
+      } catch (_) {}
+
       // Poll briefly because the opener tab may still be fetching data.
       for (let i = 0; i < 80; i++) {
         if (cancelled) return
-        const html = localStorage.getItem(storageKey)
-        if (html) {
+        const raw = localStorage.getItem(storageKey)
+        if (raw) {
+          let html = null
+          try {
+            const parsed = JSON.parse(raw)
+            if (parsed && typeof parsed.html === 'string') html = parsed.html
+          } catch (_) {
+            // Backward-compat: raw string stored directly
+            html = raw
+          }
+          if (!html) {
+            setStatus('missing')
+            return
+          }
           try {
             localStorage.removeItem(storageKey)
           } catch (_) {}

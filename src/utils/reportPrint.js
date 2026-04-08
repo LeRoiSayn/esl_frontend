@@ -145,6 +145,18 @@ function _openReportViewerTab(key) {
   return window.open(url, '_blank', 'noopener,noreferrer')
 }
 
+function _lsKey(key) {
+  return `esl_report:${key}`
+}
+
+function _saveReportHtml(key, html) {
+  const payload = JSON.stringify({
+    html,
+    createdAt: Date.now(),
+  })
+  localStorage.setItem(_lsKey(key), payload)
+}
+
 /**
  * Open report in a new tab (same event tick as the click). Use when body is already available.
  */
@@ -154,7 +166,7 @@ export function openReport(title, subtitle, body) {
   if (!w) return false
   try {
     const html = buildReportDocumentHtml(title, subtitle, body)
-    localStorage.setItem(`esl_report:${key}`, html)
+    _saveReportHtml(key, html)
     try {
       w.focus()
     } catch (_) {}
@@ -174,7 +186,7 @@ export async function openReportAsync(title, load) {
   if (!w) return false
   const { subtitle, body } = await load()
   const html = buildReportDocumentHtml(title, subtitle, body)
-  localStorage.setItem(`esl_report:${key}`, html)
+  _saveReportHtml(key, html)
   try {
     w.focus()
   } catch (_) {}

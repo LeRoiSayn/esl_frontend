@@ -426,7 +426,7 @@ ${yearsHtml}
 
     try {
       const key = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
-      sessionStorage.setItem(`esl_report:${key}`, html)
+      localStorage.setItem(`esl_report:${key}`, JSON.stringify({ html, createdAt: Date.now() }))
       const url = `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`
       const w = window.open(url, '_blank', 'noopener,noreferrer')
       if (!w) toast.error(t('popup_blocked'))
@@ -565,7 +565,7 @@ ${paymentsSection}
 
     try {
       const key = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
-      sessionStorage.setItem(`esl_report:${key}`, html)
+      localStorage.setItem(`esl_report:${key}`, JSON.stringify({ html, createdAt: Date.now() }))
       const url = `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`
       const w = window.open(url, '_blank', 'noopener,noreferrer')
       if (!w) toast.error(t('popup_blocked'))
