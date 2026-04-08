@@ -94,6 +94,24 @@ export default function FinancePayments() {
   const isRegistration = (fee) => fee.fee_type?.category === 'registration'
   const formatCurrency = (v) => new Intl.NumberFormat('fr-FR').format(v) + ' RWF'
 
+  const daysUntil = (dateLike) => {
+    if (!dateLike) return null
+    const d = new Date(dateLike)
+    if (Number.isNaN(d.getTime())) return null
+    const now = new Date()
+    d.setHours(0, 0, 0, 0)
+    now.setHours(0, 0, 0, 0)
+    return Math.round((d.getTime() - now.getTime()) / 86400000)
+  }
+
+  const urgencyForNextInstallment = (nextInst) => {
+    const du = daysUntil(nextInst?.due_date)
+    if (du === null) return 'none'
+    if (du <= 2) return 'danger'
+    if (du <= 7) return 'warning'
+    return 'none'
+  }
+
   // ── Modal open/close ─────────────────────────────────────────
   const openModal = () => {
     setStep('search')
@@ -242,18 +260,43 @@ export default function FinancePayments() {
                 </div>
               ) : filteredStudents.length === 0 ? (
                 <p className="text-center text-gray-500 py-8 text-sm">{t('no_students_pending_fees')}</p>
-              ) : filteredStudents.map(s => (
+              ) : filteredStudents.map(s => {
+                // Student-level urgency: nearest upcoming installment across all fees
+                const nexts = (s.fees || [])
+                  .filter(f => f.installment_plan?.installments)
+                  .map(f => f.installment_plan.installments.find(i => !i.paid))
+                  .filter(Boolean)
+                const nearest = nexts
+                  .map(n => ({ inst: n, du: daysUntil(n.due_date) }))
+                  .filter(x => x.du !== null)
+                  .sort((a, b) => a.du - b.du)[0]?.inst
+                const urg = urgencyForNextInstallment(nearest)
+
+                const studentCls = urg === 'danger'
+                  ? 'border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800'
+                  : urg === 'warning'
+                    ? 'border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800'
+                    : 'border-gray-200 dark:border-dark-100'
+
+                return (
                 <button key={s.id} onClick={() => selectStudent(s)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-dark-100 hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors text-left">
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border hover:border-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors text-left ${studentCls}`}>
                   <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                     {s.user?.first_name?.[0]}{s.user?.last_name?.[0]}
                   </div>
                   <div className="min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">{s.user?.first_name} {s.user?.last_name}</p>
-                    <p className="text-xs text-gray-500">{s.student_id} · {s.fees.length} {t('pending_fees_count')}</p>
+                    <p className="text-xs text-gray-500">
+                      {s.student_id} · {s.fees.length} {t('pending_fees_count')}
+                      {nearest && (
+                        <>
+                          {' '}· {t('next_installment')} <span className="font-semibold">{formatCurrency(nearest.amount)}</span>
+                        </>
+                      )}
+                    </p>
                   </div>
                 </button>
-              ))}
+              )})}
             </div>
           </div>
         )}
@@ -281,19 +324,26 @@ export default function FinancePayments() {
                 const reg = isRegistration(fee)
                 const plan = fee.installment_plan
                 const nextInst = plan?.installments?.find(i => !i.paid)
+                const urg = urgencyForNextInstallment(nextInst)
+                const planAmount = nextInst ? parseFloat(nextInst.amount || 0) : null
+                const amountToShow = planAmount != null && planAmount > 0 ? planAmount : bal
 
                 return (
                   <div key={fee.id} className={`rounded-xl border transition-colors ${
                     bal <= 0
                       ? 'border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-800'
-                      : 'border-gray-200 dark:border-dark-100 bg-white dark:bg-dark-200'
+                      : urg === 'danger'
+                        ? 'border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-800'
+                        : urg === 'warning'
+                          ? 'border-orange-200 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-800'
+                          : 'border-gray-200 dark:border-dark-100 bg-white dark:bg-dark-200'
                   }`}>
                     {/* Fee header row */}
                     <div className="p-3 flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         {bal <= 0
                           ? <CheckCircleIcon className="w-5 h-5 text-green-500 flex-shrink-0" />
-                          : <ClockIcon className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                          : <ClockIcon className={`w-5 h-5 flex-shrink-0 ${urg === 'danger' ? 'text-red-500' : urg === 'warning' ? 'text-orange-500' : 'text-gray-400'}`} />
                         }
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -302,7 +352,19 @@ export default function FinancePayments() {
                           </div>
                           {bal > 0 && (
                             <p className="text-xs text-gray-500 mt-0.5">
-                              {t('balance_label')} : <span className="font-semibold text-red-600">{formatCurrency(bal)}</span>
+                              {plan?.installments && nextInst
+                                ? (
+                                  <>
+                                    {t('next_installment')} : <span className={`font-semibold ${urg === 'danger' ? 'text-red-700' : urg === 'warning' ? 'text-orange-700' : 'text-gray-800 dark:text-gray-200'}`}>{formatCurrency(amountToShow)}</span>
+                                    {' '}· {t('due_date')} : <span className="font-medium">{new Date(nextInst.due_date).toLocaleDateString('fr-FR')}</span>
+                                  </>
+                                )
+                                : (
+                                  <>
+                                    {t('balance_label')} : <span className="font-semibold text-red-600">{formatCurrency(bal)}</span>
+                                  </>
+                                )
+                              }
                             </p>
                           )}
                         </div>
@@ -420,9 +482,15 @@ export default function FinancePayments() {
 
             <div>
               <label className="label">{t('amount_rwf')}</label>
+              {(() => {
+                const next = selectedFee.installment_plan?.installments?.find(i => !i.paid) || null
+                const maxAmt = next ? Math.min(remaining, parseFloat(next.amount || 0)) : remaining
+                return (
               <input type="number" value={payForm.amount}
                 onChange={e => setPayForm({ ...payForm, amount: e.target.value })}
-                className="input" required min="1" max={remaining} />
+                className="input" required min="1" max={maxAmt} />
+                )
+              })()}
             </div>
             <div>
               <label className="label">{t('payment_method_label')}</label>

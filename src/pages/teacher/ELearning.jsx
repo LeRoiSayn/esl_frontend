@@ -1394,16 +1394,12 @@ const ELearning = () => {
         data.quiz?.title || '',
         body,
       );
-      const pw = window.open('about:blank', '_blank', 'noopener,noreferrer');
-      if (!pw) {
-        toast.error(t('popup_blocked'));
-        return;
-      }
       try {
-        pw.document.open();
-        pw.document.write(html);
-        pw.document.close();
-        pw.focus();
+        const key = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+        sessionStorage.setItem(`esl_report:${key}`, html);
+        const url = `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`;
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) toast.error(t('popup_blocked'));
       } catch {
         toast.error(t('error'));
       }

@@ -188,14 +188,14 @@ export default function StudentGrades() {
       </div>
     </body></html>`
 
-    const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const pw = window.open(url, '_blank')
-    if (pw) setTimeout(() => URL.revokeObjectURL(url), 60000)
-    else {
-      // Fallback: open in same tab (no pop-up permissions needed)
-      window.location.assign(url)
-      setTimeout(() => URL.revokeObjectURL(url), 60000)
+    try {
+      const key = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+      sessionStorage.setItem(`esl_report:${key}`, html)
+      const url = `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`
+      const w = window.open(url, '_blank', 'noopener,noreferrer')
+      if (!w) toast.error(t('popup_blocked'))
+    } catch {
+      toast.error(t('error'))
     }
   }
 
