@@ -23,6 +23,8 @@ import AdminStudentReport from './pages/admin/StudentReport'
 import UnifiedStudentManagement from './pages/admin/UnifiedStudentManagement'
 import UnifiedTeacherManagement from './pages/admin/UnifiedTeacherManagement'
 import AdminSchedules from './pages/admin/Schedules'
+import AdminSystemSettings from './pages/admin/SystemSettings'
+import AdminAcademicLevels from './pages/admin/AcademicLevels'
 
 import RegistrarDashboard from './pages/registrar/Dashboard'
 import RegistrarStudents from './pages/registrar/Students'
@@ -136,6 +138,8 @@ function App() {
           <Route path="student-management/:id/report" element={<AdminStudentReport />} />
           <Route path="teacher-management" element={<UnifiedTeacherManagement />} />
           <Route path="schedules" element={<AdminSchedules />} />
+          <Route path="system-settings" element={<AdminSystemSettings />} />
+          <Route path="academic-levels" element={<AdminAcademicLevels />} />
           <Route path="reports" element={<AdminReports />} />
           <Route path="activity-log" element={<AdminActivityLog />} />
           <Route path="grades" element={<AdminGrades />} />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { feeTypeApi } from '../../services/api'
+import { feeTypeApi, systemSettingsApi } from '../../services/api'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
 import { PlusIcon, PencilIcon, TrashIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
@@ -13,9 +13,18 @@ export default function FinanceFeeTypes() {
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [formData, setFormData] = useState({ name: '', description: '', amount: '', is_mandatory: true, level: '' })
+  const [formData, setFormData] = useState({ name: '', description: '', amount: '', is_mandatory: true, level: '', category: '' })
+  const [categories, setCategories] = useState(['tuition', 'registration', 'library', 'lab', 'other'])
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    fetchData()
+    systemSettingsApi.getPublic()
+      .then(res => {
+        const cats = res.data.data?.fee_categories
+        if (Array.isArray(cats) && cats.length > 0) setCategories(cats)
+      })
+      .catch(() => {})
+  }, [])
 
   const fetchData = async () => {
     try { const response = await feeTypeApi.getAll(); setFeeTypes(response.data.data) } 
@@ -27,11 +36,11 @@ export default function FinanceFeeTypes() {
     try {
       if (editing) { await feeTypeApi.update(editing.id, formData); toast.success(t('item_updated')) }
       else { await feeTypeApi.create(formData); toast.success(t('item_created')) }
-      setModalOpen(false); setEditing(null); setFormData({ name: '', description: '', amount: '', is_mandatory: true, level: '' }); fetchData()
+      setModalOpen(false); setEditing(null); setFormData({ name: '', description: '', amount: '', is_mandatory: true, level: '', category: '' }); fetchData()
     } catch (error) { toast.error(error.response?.data?.message || 'Failed') }
   }
 
-  const handleEdit = (item) => { setEditing(item); setFormData({ name: item.name, description: item.description || '', amount: item.amount, is_mandatory: item.is_mandatory, level: item.level || '' }); setModalOpen(true) }
+  const handleEdit = (item) => { setEditing(item); setFormData({ name: item.name, description: item.description || '', amount: item.amount, is_mandatory: item.is_mandatory, level: item.level || '', category: item.category || '' }); setModalOpen(true) }
   const handleDelete = async (item) => { if (!window.confirm('Delete?')) return; try { await feeTypeApi.delete(item.id); toast.success(t('item_deleted')); fetchData() } catch (error) { toast.error(t('error')) } }
   const handleToggle = async (item) => { try { await feeTypeApi.toggle(item.id); toast.success(t(item.is_active ? 'deactivated' : 'activated')); fetchData() } catch (error) { toast.error(t('error')) } }
 
@@ -45,6 +54,7 @@ export default function FinanceFeeTypes() {
       </div>
     )},
     { header: t('amount'), cell: (row) => <span className="font-semibold text-green-600">{formatCurrency(row.amount)}</span> },
+    { header: t('category'), cell: (row) => row.category ? <span className="badge badge-info capitalize">{row.category}</span> : <span className="text-gray-400 text-xs">—</span> },
     { header: t('level'), cell: (row) => row.level ? <span className="badge badge-info">{row.level}</span> : <span className="text-gray-400 text-xs">{t('all_levels')}</span> },
     { header: t('mandatory'), cell: (row) => <span className={`badge ${row.is_mandatory ? 'badge-warning' : 'badge-info'}`}>{row.is_mandatory ? t('yes') : t('no')}</span> },
     { header: t('status'), cell: (row) => <button onClick={() => handleToggle(row)} className={`badge ${row.is_active ? 'badge-success' : 'badge-danger'}`}>{row.is_active ? t('active') : t('inactive')}</button> },
@@ -60,7 +70,7 @@ export default function FinanceFeeTypes() {
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div><h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">{t('fee_types')}</h1><p className="text-gray-500 dark:text-gray-400">{t('manage_fee_categories')}</p></div>
-        <button onClick={() => { setEditing(null); setFormData({ name: '', description: '', amount: '', is_mandatory: true }); setModalOpen(true) }} className="btn-primary"><PlusIcon className="w-5 h-5 mr-2" />{t('add_fee_type')}</button>
+        <button onClick={() => { setEditing(null); setFormData({ name: '', description: '', amount: '', is_mandatory: true, level: '', category: '' }); setModalOpen(true) }} className="btn-primary"><PlusIcon className="w-5 h-5 mr-2" />{t('add_fee_type')}</button>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card"><DataTable columns={columns} data={feeTypes} loading={loading} searchPlaceholder={t('search') + ' ' + t('fee_types').toLowerCase() + '...'} /></motion.div>
@@ -69,6 +79,13 @@ export default function FinanceFeeTypes() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div><label className="label">{t('name')}</label><input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="input" required /></div>
           <div><label className="label">{t('amount_fcfa')}</label><input type="number" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="input" required min="0" /></div>
+          <div>
+            <label className="label">{t('category')}</label>
+            <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="input">
+              <option value="">— {t('select')} —</option>
+              {categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+            </select>
+          </div>
           <div>
             <label className="label">{t('level')}</label>
             <select value={formData.level} onChange={(e) => setFormData({...formData, level: e.target.value})} className="input">

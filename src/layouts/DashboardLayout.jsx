@@ -27,6 +27,7 @@ import {
   UsersIcon,
   DocumentTextIcon,
   VideoCameraIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline'
 
 const menuItems = {
@@ -42,6 +43,8 @@ const menuItems = {
     { nameKey: 'menu_reports', path: '/admin/reports', icon: ChartBarIcon },
     { nameKey: 'menu_grades', path: '/admin/grades', icon: AcademicCapIcon },
     { nameKey: 'menu_activity_log', path: '/admin/activity-log', icon: ClockIcon },
+    { nameKey: 'menu_system_settings', path: '/admin/system-settings', icon: WrenchScrewdriverIcon },
+    { nameKey: 'menu_academic_levels', path: '/admin/academic-levels', icon: AcademicCapIcon },
     { nameKey: 'menu_settings', path: '/admin/settings', icon: Cog6ToothIcon },
   ],
   registrar: [

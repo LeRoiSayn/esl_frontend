@@ -11,6 +11,7 @@ import {
   MicrophoneIcon,
 } from '@heroicons/react/24/outline'
 import { useAuth } from '../context/AuthContext'
+import { useI18n } from '../i18n/index.jsx'
 import api from '../services/api'
 
 // ─── UI string translations ───────────────────────────────────────────────────
@@ -42,7 +43,7 @@ const GREET = {
   fr: {
     morning: 'Bonjour', afternoon: 'Bon après-midi', evening: 'Bonsoir',
     admin: (n, t) => ({
-      message: `${t} ${n}! 👋\n\nJe suis **Simon**, votre assistant IA. En tant qu'administrateur vous avez accès à toutes les données du système.\n\n💡 **Questions que vous pouvez poser :**\n• "Recherche étudiant Dupont"\n• "Statistiques globales"\n• "KPIs institutionnels"\n• "Alertes étudiants"\n• "Notes soumises par les enseignants"\n• "Rapport financier du mois"`,
+      message: `${t} ${n}! 👋\n\nJe suis **Simon**, votre assistant . En tant qu'administrateur vous avez accès à toutes les données du système.\n\n💡 **Questions que vous pouvez poser :**\n• "Recherche étudiant Dupont"\n• "Statistiques globales"\n• "KPIs institutionnels"\n• "Alertes étudiants"\n• "Notes soumises par les enseignants"\n• "Rapport financier du mois"`,
       quickActions: [
         { label: '🔍 Rechercher un étudiant', action: 'search_student' },
         { label: '📊 KPIs institutionnels', action: 'show_kpis' },
@@ -197,8 +198,9 @@ const Chatbot = () => {
   const [isTyping, setIsTyping] = useState(false)
   const [sessionId, setSessionId] = useState(null)
   const [isListening, setIsListening] = useState(false)
+  const { language: appLanguage, setLanguage: setAppLanguage } = useI18n()
   const [language, setLanguage] = useState(
-    () => localStorage.getItem('chatbot_lang') || 'fr'
+    () => localStorage.getItem('chatbot_lang') || appLanguage || 'fr'
   )
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -210,6 +212,15 @@ const Chatbot = () => {
   }
 
   useEffect(() => { scrollToBottom() }, [messages])
+
+  // Keep chatbot language in sync with app language (unless user explicitly set it)
+  useEffect(() => {
+    const saved = localStorage.getItem('chatbot_lang')
+    if (!saved && appLanguage && appLanguage !== language) {
+      setLanguage(appLanguage)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appLanguage])
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
@@ -224,6 +235,9 @@ const Chatbot = () => {
     const newLang = language === 'fr' ? 'en' : 'fr'
     setLanguage(newLang)
     localStorage.setItem('chatbot_lang', newLang)
+    try {
+      setAppLanguage(newLang)
+    } catch (_) {}
     if (isOpen) {
       setMessages([])
       setTimeout(() => {

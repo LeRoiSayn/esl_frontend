@@ -3,9 +3,11 @@ import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { ChartBarIcon, UserGroupIcon, DocumentTextIcon, PrinterIcon } from '@heroicons/react/24/outline'
 import { dashboardApi, paymentApi, studentFeeApi, feeTypeApi } from '../../services/api'
+import { useI18n } from '../../i18n/index.jsx'
 import { esc, fmtRwf, openReportAsync } from '../../utils/reportPrint'
 
 function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGenerate, loading, delay = 0 }) {
+  const { t } = useI18n()
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -30,13 +32,14 @@ function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGener
           ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           : <PrinterIcon className="w-4 h-4" />
         }
-        {loading ? 'Génération…' : 'Voir le rapport'}
+        {loading ? t('generating') : t('view_report')}
       </button>
     </motion.div>
   )
 }
 
 export default function FinanceReports() {
+  const { t } = useI18n()
   const [loadingGlobal, setLoadingGlobal] = useState(false)
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [loadingFeeTypes, setLoadingFeeTypes] = useState(false)
@@ -45,7 +48,7 @@ export default function FinanceReports() {
   const handleGlobal = async () => {
     setLoadingGlobal(true)
     try {
-      if (!(await openReportAsync('Rapport Financier Global', async () => {
+      if (!(await openReportAsync(t('finance_report_global_title'), async () => {
         const [statsRes, paymentsRes] = await Promise.all([
           dashboardApi.getFinanceStats(),
           paymentApi.getAll({ per_page: 500 }),
@@ -96,12 +99,12 @@ export default function FinanceReports() {
         <div class="sec-title">30 Derniers Paiements</div>
         <table><thead><tr><th>Référence</th><th>Étudiant</th><th>Méthode</th><th>Date</th><th style="text-align:right">Montant</th></tr></thead>
         <tbody>${recentRows}</tbody></table>`
-        return { subtitle: "Rapport Financier Global — Vue d'ensemble des Revenus", body }
+        return { subtitle: t('finance_report_global_subtitle'), body }
       }))) {
-        toast.error('Autorisez les pop-ups pour afficher le rapport')
+        toast.error(t('popup_blocked'))
       }
     } catch {
-      toast.error('Erreur lors de la génération du rapport global')
+      toast.error(t('error'))
     } finally {
       setLoadingGlobal(false)
     }
@@ -111,7 +114,7 @@ export default function FinanceReports() {
   const handleStudents = async () => {
     setLoadingStudents(true)
     try {
-      if (!(await openReportAsync('Rapport Financier par Étudiant', async () => {
+      if (!(await openReportAsync(t('finance_report_by_student_title'), async () => {
         const res = await studentFeeApi.getAll({ per_page: 2000 })
         const fees = res.data?.data?.data || res.data?.data || []
 
@@ -156,12 +159,12 @@ export default function FinanceReports() {
         <th style="text-align:right">Solde</th><th style="text-align:center">Taux</th>
         <th style="text-align:center">Statut</th>
       </tr></thead><tbody>${rows}</tbody></table>`
-        return { subtitle: 'État des Frais de Scolarité — Tous les Étudiants', body }
+        return { subtitle: t('finance_report_by_student_subtitle'), body }
       }))) {
-        toast.error('Autorisez les pop-ups pour afficher le rapport')
+        toast.error(t('popup_blocked'))
       }
     } catch {
-      toast.error('Erreur lors de la génération du rapport par étudiant')
+      toast.error(t('error'))
     } finally {
       setLoadingStudents(false)
     }
@@ -171,7 +174,7 @@ export default function FinanceReports() {
   const handleFeeTypes = async () => {
     setLoadingFeeTypes(true)
     try {
-      if (!(await openReportAsync('Rapport par Type de Frais', async () => {
+      if (!(await openReportAsync(t('finance_report_by_fee_type_title'), async () => {
         const [typesRes, feesRes] = await Promise.all([
           feeTypeApi.getAll({ per_page: 200 }),
           studentFeeApi.getAll({ per_page: 2000 }),
@@ -204,12 +207,12 @@ export default function FinanceReports() {
         <th style="text-align:right">Collecté</th><th style="text-align:right">Solde</th>
         <th style="text-align:center">Taux</th>
       </tr></thead><tbody>${rows}</tbody></table>`
-        return { subtitle: 'Taux de Recouvrement par Catégorie de Frais', body }
+        return { subtitle: t('finance_report_by_fee_type_subtitle'), body }
       }))) {
-        toast.error('Autorisez les pop-ups pour afficher le rapport')
+        toast.error(t('popup_blocked'))
       }
     } catch {
-      toast.error('Erreur lors de la génération du rapport par type de frais')
+      toast.error(t('error'))
     } finally {
       setLoadingFeeTypes(false)
     }

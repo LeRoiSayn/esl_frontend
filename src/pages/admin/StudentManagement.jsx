@@ -18,8 +18,10 @@ import {
 } from "@heroicons/react/24/outline";
 import api, { courseApi } from "../../services/api";
 import { openReportAsync, esc as escReport } from "../../utils/reportPrint";
+import { useI18n } from "../../i18n/index.jsx";
 
 const StudentManagement = () => {
+  const { t } = useI18n();
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -187,29 +189,29 @@ const StudentManagement = () => {
   };
 
   const openAcademicReport = async () => {
-    if (!selectedStudent) return alert("Sélectionnez un étudiant");
+    if (!selectedStudent) return alert(t("select_student"));
     try {
-      if (!(await openReportAsync('Rapport Académique', async () => {
+      if (!(await openReportAsync(t("student_report_academic_title"), async () => {
         const deptId = selectedStudent.student.department?.id;
         const res = await courseApi.getAll({ department_id: deptId, per_page: 1000 });
         const data = res.data.data || res.data;
         const courses = data.data || data || [];
         const fullName = `${selectedStudent.student.user?.first_name || ''} ${selectedStudent.student.user?.last_name || ''}`.trim();
         const body = generateAcademicReportBody(selectedStudent, courses);
-        return { subtitle: `Relevé de ${fullName}`, body };
+        return { subtitle: `${t("student_report_academic_subtitle_prefix")} ${fullName}`, body };
       })))
-        alert("Impossible d'ouvrir une nouvelle fenêtre. Vérifiez le bloqueur de popups.");
+        alert(t("popup_blocked"));
       setShowReportDropdown(false);
     } catch (e) {
       console.error(e);
-      alert("Erreur lors de la génération du rapport");
+      alert(t("error"));
     }
   };
 
   const openFinancialReport = async () => {
-    if (!selectedStudent) return alert("Sélectionnez un étudiant");
+    if (!selectedStudent) return alert(t("select_student"));
     try {
-      if (!(await openReportAsync('Rapport Financier', async () => {
+      if (!(await openReportAsync(t("student_report_financial_title"), async () => {
         const payments = [];
         const fees = selectedStudent.student?.fees || selectedStudent.fees || [];
         fees.forEach((f) => { if (f.payments) f.payments.forEach((p) => payments.push(p)) });
@@ -217,13 +219,13 @@ const StudentManagement = () => {
           selectedStudent.payments.forEach((p) => payments.push(p));
         const fullName = `${selectedStudent.student.user?.first_name || ''} ${selectedStudent.student.user?.last_name || ''}`.trim();
         const body = generateFinancialReportBody(selectedStudent, payments);
-        return { subtitle: `Historique de ${fullName}`, body };
+        return { subtitle: `${t("student_report_financial_subtitle_prefix")} ${fullName}`, body };
       })))
-        alert("Impossible d'ouvrir une nouvelle fenêtre. Vérifiez le bloqueur de popups.");
+        alert(t("popup_blocked"));
       setShowReportDropdown(false);
     } catch (e) {
       console.error(e);
-      alert("Erreur lors de la génération du rapport financier");
+      alert(t("error"));
     }
   };
 
@@ -246,12 +248,12 @@ const StudentManagement = () => {
       fetchStudentDetails(selectedStudent.student.id);
       setShowCourseModal(false);
     } catch (error) {
-      alert(error.response?.data?.error || "Erreur lors de l'ajout du cours");
+      alert(error.response?.data?.error || t("error"));
     }
   };
 
   const removeCourse = async (courseId) => {
-    if (!confirm("Êtes-vous sûr de vouloir retirer ce cours?")) return;
+    if (!confirm(t("confirm_remove_course"))) return;
 
     try {
       await api.delete(
@@ -274,7 +276,7 @@ const StudentManagement = () => {
         >
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Modifier la note
+              {t("edit_grade")}
             </h2>
             <button
               onClick={onClose}
@@ -287,7 +289,7 @@ const StudentManagement = () => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Cours
+                {t("course")}
               </label>
               <p className="text-gray-900 dark:text-white font-medium">
                 {grade.course?.name}
@@ -296,7 +298,7 @@ const StudentManagement = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Note actuelle
+                {t("current_grade")}
               </label>
               <p className="text-2xl font-bold text-primary-600">
                 {grade.final_grade}/100 ({grade.letter_grade})
@@ -305,7 +307,7 @@ const StudentManagement = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Nouvelle note
+                {t("new_grade")}
               </label>
               <input
                 type="number"
@@ -320,18 +322,18 @@ const StudentManagement = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Motif de modification *
+                {t("grade_change_reason")}
               </label>
               <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Expliquez pourquoi cette note est modifiée..."
+                placeholder={t("grade_change_reason_placeholder")}
                 className="w-full p-3 rounded-lg bg-gray-100 dark:bg-dark-200 border-0 text-gray-900 dark:text-white"
                 rows={3}
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Cette modification sera enregistrée dans les logs
+                {t("grade_change_reason_help")}
               </p>
             </div>
 
@@ -340,14 +342,14 @@ const StudentManagement = () => {
                 onClick={onClose}
                 className="flex-1 py-3 rounded-lg bg-gray-100 dark:bg-dark-200 text-gray-700 dark:text-gray-300 font-medium"
               >
-                Annuler
+                {t("cancel")}
               </button>
               <button
                 onClick={() => updateGrade(grade.id, newGrade, reason)}
                 disabled={!reason || reason.length < 10}
                 className="flex-1 py-3 rounded-lg bg-primary-500 text-white font-medium hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Enregistrer
+                {t("save")}
               </button>
             </div>
           </div>

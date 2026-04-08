@@ -67,7 +67,7 @@ export default function Login() {
       localStorage.setItem('token', token)
       window.location.href = `/${user.role}`
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Code incorrect')
+      toast.error(err.response?.data?.message || t('invalid_code'))
     } finally {
       setIsLoading(false)
     }
@@ -92,11 +92,11 @@ export default function Login() {
     setResending(true)
     try {
       await authApi.resendOtp({ username, type: 'login' })
-      toast.success('Nouveau code envoyé !')
+      toast.success(t('otp_sent'))
       setOtp(['', '', '', '', '', ''])
       otpRefs.current[0]?.focus()
     } catch (err) {
-      toast.error('Erreur lors du renvoi')
+      toast.error(t('resend_error'))
     } finally {
       setResending(false)
     }
@@ -136,7 +136,7 @@ export default function Login() {
               </div>
             </motion.div>
             <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-4xl font-display font-bold text-white mb-3">ESL</motion.h1>
-            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="text-gray-300 font-medium text-lg tracking-wide">École de Santé de Libreville</motion.p>
+            <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="text-gray-300 font-medium text-lg tracking-wide">{t('school_name_full')}</motion.p>
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6 }} className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-sm text-gray-400">{t('login_portal')}</span>
@@ -244,7 +244,7 @@ export default function Login() {
           </motion.div>
 
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-center text-sm text-gray-500 mt-8">
-            © 2026 ESL - École de Santé de Libreville. {t('all_rights_reserved')}.
+            © 2026 ESL - {t('school_name_full')}. {t('all_rights_reserved')}.
           </motion.p>
         </motion.div>
       </div>

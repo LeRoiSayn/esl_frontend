@@ -314,4 +314,22 @@ export const notificationApi = {
   deleteAll: () => api.delete("/notifications/all"),
 };
 
+// System Settings API (admin only)
+export const systemSettingsApi = {
+  getAll: () => api.get('/system-settings'),
+  update: (data) => api.put('/system-settings', data),
+  uploadLogo: (formData) => api.post('/system-settings/logo', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getPublic: () => api.get('/system-settings/public'),
+};
+
+// Academic Levels API
+export const academicLevelApi = {
+  getAll: () => api.get('/academic-levels'),
+  create: (data) => api.post('/academic-levels', data),
+  update: (id, data) => api.put(`/academic-levels/${id}`, data),
+  delete: (id) => api.delete(`/academic-levels/${id}`),
+  toggle: (id) => api.post(`/academic-levels/${id}/toggle`),
+  reorder: (levels) => api.post('/academic-levels/reorder', { levels }),
+};
+
 export default api;

@@ -167,7 +167,7 @@ const ELearning = () => {
   };
 
   const deleteMaterial = async (id) => {
-    if (!confirm("Supprimer ce document?")) return;
+    if (!confirm(t("confirm_delete_document"))) return;
     try {
       await api.delete(`/elearning/materials/${id}`);
       toast.success(t('item_deleted'));
@@ -188,7 +188,7 @@ const ELearning = () => {
   };
 
   const deleteQuiz = async (id) => {
-    if (!confirm("Supprimer ce quiz et toutes les tentatives?")) return;
+    if (!confirm(t("confirm_delete_quiz_with_attempts"))) return;
     try {
       await api.delete(`/elearning/quizzes/${id}`);
       toast.success(t('quiz_deleted'));
@@ -209,7 +209,7 @@ const ELearning = () => {
   };
 
   const deleteAssignment = async (id) => {
-    if (!confirm("Supprimer ce devoir et toutes les soumissions?")) return;
+    if (!confirm(t("confirm_delete_assignment_with_submissions"))) return;
     try {
       await api.delete(`/elearning/assignments/${id}`);
       toast.success(t('assignment_deleted'));
@@ -222,25 +222,25 @@ const ELearning = () => {
   const tabs = [
     {
       id: "courses",
-      name: "Cours en Ligne",
+      name: t("elearning_courses"),
       icon: VideoCameraIcon,
       count: onlineCourses.length,
     },
     {
       id: "materials",
-      name: "Documents",
+      name: t("elearning_documents"),
       icon: DocumentTextIcon,
       count: materials.length,
     },
     {
       id: "quizzes",
-      name: "Quiz",
+      name: t("elearning_quizzes"),
       icon: ClipboardDocumentListIcon,
       count: quizzes.length,
     },
     {
       id: "assignments",
-      name: "Devoirs",
+      name: t("elearning_assignments"),
       icon: FolderPlusIcon,
       count: assignments.length,
     },
@@ -310,10 +310,10 @@ const ELearning = () => {
     };
 
     return (
-      <Modal title="Créer un Cours en Ligne" onClose={() => setShowModal(null)}>
+      <Modal title={`${t("create")} — ${t("elearning_courses")}`} onClose={() => setShowModal(null)}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="label">Classe</label>
+            <label className="label">{t("class")}</label>
             <select
               value={formData.class_id}
               onChange={(e) =>
@@ -322,7 +322,7 @@ const ELearning = () => {
               className="input"
               required
             >
-              <option value="">Sélectionner une classe</option>
+              <option value="">{t("elearning_select_class")}</option>
               {(Array.isArray(myCourses) ? myCourses : []).map((c) => (
                 <option
                   key={c.id}
@@ -333,7 +333,7 @@ const ELearning = () => {
           </div>
 
           <div>
-            <label className="label">Lien Google Meet (URL)</label>
+            <label className="label">{t("elearning_meeting_link_label")}</label>
             <input
               type="url"
               value={formData.external_url}
@@ -341,13 +341,13 @@ const ELearning = () => {
                 setFormData({ ...formData, external_url: e.target.value })
               }
               className="input"
-              placeholder="https://meet.google.com/xxx-xxxx-xxx"
+              placeholder={t("elearning_meeting_link_placeholder")}
               required
             />
           </div>
 
           <div>
-            <label className="label">Titre de la session</label>
+            <label className="label">{t("title")}</label>
             <input
               type="text"
               value={formData.title}
@@ -355,13 +355,13 @@ const ELearning = () => {
                 setFormData({ ...formData, title: e.target.value })
               }
               className="input"
-              placeholder="Ex: Introduction au chapitre 3"
+              placeholder={t("elearning_session_title_placeholder")}
               required
             />
           </div>
 
           <div>
-            <label className="label">Description</label>
+            <label className="label">{t("description")}</label>
             <textarea
               value={formData.description}
               onChange={(e) =>
@@ -369,13 +369,13 @@ const ELearning = () => {
               }
               className="input"
               rows={3}
-              placeholder="Description du cours..."
+              placeholder={t("elearning_course_description_placeholder")}
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="label">Date et heure</label>
+              <label className="label">{t("date_time")}</label>
               <input
                 type="datetime-local"
                 value={formData.scheduled_at}
@@ -386,7 +386,7 @@ const ELearning = () => {
               />
             </div>
             <div>
-              <label className="label">Durée (min)</label>
+              <label className="label">{t("duration_minutes")}</label>
               <input
                 type="number"
                 min={15}
@@ -408,14 +408,14 @@ const ELearning = () => {
               onClick={() => setShowModal(null)}
               className="btn-secondary flex-1"
             >
-              Annuler
+              {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
               className="btn-primary flex-1"
             >
-              {isSubmitting ? "Création..." : "Créer le cours"}
+              {isSubmitting ? t("creating") : t("create")}
             </button>
           </div>
         </form>
@@ -836,14 +836,14 @@ const ELearning = () => {
     };
 
     return (
-      <Modal title="Créer un Quiz" onClose={() => setShowModal(null)} size="lg">
+      <Modal title={`${t("create")} — ${t("elearning_quizzes")}`} onClose={() => setShowModal(null)} size="lg">
         <form
           onSubmit={handleSubmit}
           className="space-y-4 max-h-[65vh] overflow-y-auto pr-2"
         >
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Cours</label>
+              <label className="label">{t("course")}</label>
               <select
                 value={formData.course_id}
                 onChange={(e) =>
@@ -852,7 +852,7 @@ const ELearning = () => {
                 className="input"
                 required
               >
-                <option value="">Sélectionner</option>
+                <option value="">{t("select")}</option>
                 {myCourses.map((course) => (
                   <option
                     key={course.course_id || course.id}
@@ -864,7 +864,7 @@ const ELearning = () => {
               </select>
             </div>
             <div>
-              <label className="label">Titre</label>
+              <label className="label">{t("title")}</label>
               <input
                 type="text"
                 value={formData.title}
@@ -879,7 +879,7 @@ const ELearning = () => {
 
           <div className="grid grid-cols-4 gap-4">
             <div>
-              <label className="label">Durée (min)</label>
+              <label className="label">{t("duration_minutes")}</label>
               <input
                 type="number"
                 value={formData.duration_minutes}
@@ -894,7 +894,7 @@ const ELearning = () => {
               />
             </div>
             <div>
-              <label className="label">Total points</label>
+              <label className="label">{t("total_points")}</label>
               <input
                 type="number"
                 value={formData.total_points}

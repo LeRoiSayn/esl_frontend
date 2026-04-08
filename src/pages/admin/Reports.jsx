@@ -22,6 +22,7 @@ function generateColors(count) {
 
 // ── Report Card ─────────────────────────────────────────────────────────────
 function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGenerate, loading, delay = 0 }) {
+  const { t } = useI18n()
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -46,7 +47,7 @@ function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGener
           ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           : <PrinterIcon className="w-4 h-4" />
         }
-        {loading ? 'Génération…' : 'Voir le rapport'}
+        {loading ? t('generating') : t('view_report')}
       </button>
     </motion.div>
   )
@@ -77,7 +78,7 @@ export default function AdminReports() {
   const handleClasses = async () => {
     setLoadingClasses(true)
     try {
-      if (!(await openReportAsync('Rapport des Classes', async () => {
+      if (!(await openReportAsync(t('admin_report_classes_title'), async () => {
         const res = await classApi.getAll({ per_page: 1000 })
         const classes = res.data?.data?.data || res.data?.data || []
 
@@ -118,12 +119,12 @@ export default function AdminReports() {
             Total : <strong>${classes.length} classe${classes.length > 1 ? 's' : ''}</strong> sur <strong>${Object.keys(byYear).length} année${Object.keys(byYear).length > 1 ? 's' : ''}</strong>
           </div>
           ${sections}`
-        return { subtitle: 'Liste Complète des Classes par Année Académique', body }
+        return { subtitle: t('admin_report_classes_subtitle'), body }
       }))) {
-        alert('Autorisez les pop-ups pour afficher le rapport')
+        alert(t('popup_blocked'))
       }
     } catch {
-      alert('Erreur lors de la génération du rapport des classes')
+      alert(t('error'))
     } finally {
       setLoadingClasses(false)
     }
@@ -133,7 +134,7 @@ export default function AdminReports() {
   const handleTeachers = async () => {
     setLoadingTeachers(true)
     try {
-      if (!(await openReportAsync('Rapport des Enseignants', async () => {
+      if (!(await openReportAsync(t('admin_report_teachers_title'), async () => {
         const res = await teacherApi.getAll({ per_page: 1000 })
         const teachers = res.data?.data?.data || res.data?.data || []
 
@@ -179,12 +180,12 @@ export default function AdminReports() {
             dans <strong>${Object.keys(byFaculty).length} faculté${Object.keys(byFaculty).length > 1 ? 's' : ''}</strong>
           </div>
           ${sections}`
-        return { subtitle: 'Liste des Enseignants par Faculté et Département', body }
+        return { subtitle: t('admin_report_teachers_subtitle'), body }
       }))) {
-        alert('Autorisez les pop-ups pour afficher le rapport')
+        alert(t('popup_blocked'))
       }
     } catch {
-      alert('Erreur lors de la génération du rapport des enseignants')
+      alert(t('error'))
     } finally {
       setLoadingTeachers(false)
     }
@@ -194,7 +195,7 @@ export default function AdminReports() {
   const handleCourses = async () => {
     setLoadingCourses(true)
     try {
-      if (!(await openReportAsync('Liste des Cours', async () => {
+      if (!(await openReportAsync(t('admin_report_courses_title'), async () => {
         const [coursesRes] = await Promise.all([
           courseApi.getAll({ per_page: 2000 }),
           departmentApi.getAll({ per_page: 200 }),
@@ -240,12 +241,12 @@ export default function AdminReports() {
             &nbsp;·&nbsp; Actifs : <strong>${courses.filter(c => c.is_active).length}</strong>
           </div>
           ${sections}`
-        return { subtitle: 'Catalogue Complet des Cours par Département', body }
+        return { subtitle: t('admin_report_courses_subtitle'), body }
       }))) {
-        alert('Autorisez les pop-ups pour afficher le rapport')
+        alert(t('popup_blocked'))
       }
     } catch {
-      alert('Erreur lors de la génération de la liste des cours')
+      alert(t('error'))
     } finally {
       setLoadingCourses(false)
     }
@@ -277,10 +278,10 @@ export default function AdminReports() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Students" value={stats?.stats?.total_students || 0} icon={UserGroupIcon} color="primary" />
-        <StatCard title="Active Students" value={stats?.stats?.active_students || 0} icon={UserGroupIcon} color="teal" delay={0.1} />
-        <StatCard title="Total Teachers" value={stats?.stats?.total_teachers || 0} icon={UsersIcon} color="blue" delay={0.2} />
-        <StatCard title="Active Teachers" value={stats?.stats?.active_teachers || 0} icon={UsersIcon} color="purple" delay={0.3} />
+        <StatCard title={t('reports_total_students')} value={stats?.stats?.total_students || 0} icon={UserGroupIcon} color="primary" />
+        <StatCard title={t('reports_active_students')} value={stats?.stats?.active_students || 0} icon={UserGroupIcon} color="teal" delay={0.1} />
+        <StatCard title={t('reports_total_teachers')} value={stats?.stats?.total_teachers || 0} icon={UsersIcon} color="blue" delay={0.2} />
+        <StatCard title={t('reports_active_teachers')} value={stats?.stats?.active_teachers || 0} icon={UsersIcon} color="purple" delay={0.3} />
       </div>
 
       {/* Charts */}

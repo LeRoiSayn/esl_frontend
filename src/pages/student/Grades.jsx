@@ -13,11 +13,12 @@ function fmtScore(val) {
 }
 
 function mention20(score20) {
-  if (score20 >= 16) return 'Très Bien'
-  if (score20 >= 14) return 'Bien'
-  if (score20 >= 12) return 'Assez Bien'
-  if (score20 >= 10) return 'Passable'
-  return 'Insuffisant'
+  // labels are translated via i18n in the caller (see mentionLabel)
+  if (score20 >= 16) return 'very_good'
+  if (score20 >= 14) return 'good'
+  if (score20 >= 12) return 'fairly_good'
+  if (score20 >= 10) return 'passable'
+  return 'insufficient'
 }
 
 export default function StudentGrades() {
@@ -61,7 +62,7 @@ export default function StudentGrades() {
           const hasGrade = g && g.final_grade != null
           const final = hasGrade ? parseFloat(g.final_grade) : null
           const score20 = hasGrade ? (final / 5).toFixed(2) : null
-          const men = hasGrade ? mention20(final / 5) : '—'
+          const men = hasGrade ? t(`mention_${mention20(final / 5)}`) : '—'
           const passClass = hasGrade ? (final / 5 >= 10 ? 'pass' : 'fail') : ''
           tableBody += `<tr class="${hasGrade ? '' : 'no-grade'}">
             <td>${e.class?.course?.name || '—'}</td>
@@ -191,7 +192,7 @@ export default function StudentGrades() {
     const url = URL.createObjectURL(blob)
     const pw = window.open(url, '_blank')
     if (pw) setTimeout(() => URL.revokeObjectURL(url), 60000)
-    else { URL.revokeObjectURL(url); toast.error('Autorisez les pop-ups pour afficher le relevé') }
+    else { URL.revokeObjectURL(url); toast.error(t('popup_blocked')) }
   }
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>
@@ -218,7 +219,7 @@ export default function StudentGrades() {
           className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors shrink-0"
         >
           <PrinterIcon className="w-4 h-4" />
-          Voir le relevé de notes
+          {t('view_transcript')}
         </button>
       </motion.div>
 
@@ -263,7 +264,7 @@ export default function StudentGrades() {
               {currentEnrollments.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="text-center py-8 text-gray-400 text-sm">
-                    Aucun cours actif pour cette année académique
+                    {t('no_active_courses_this_year')}
                   </td>
                 </tr>
               ) : currentEnrollments.map(enrollment => {
@@ -297,7 +298,7 @@ export default function StudentGrades() {
                         </span>
                         {final != null && (
                           <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                            {mention20(final / 5)}
+                            {t(`mention_${mention20(final / 5)}`)}
                           </span>
                         )}
                       </div>

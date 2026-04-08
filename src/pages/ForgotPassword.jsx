@@ -44,7 +44,7 @@ export default function ForgotPassword() {
       toast.success(res.data.message)
       setStep(2)
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Erreur lors de l\'envoi')
+      toast.error(err.response?.data?.message || t('send_error'))
     } finally {
       setIsLoading(false)
     }
@@ -63,7 +63,7 @@ export default function ForgotPassword() {
   const handleResetSubmit = async (e) => {
     e.preventDefault()
     if (password !== passwordConfirm) {
-      toast.error('Les mots de passe ne correspondent pas')
+      toast.error(t('passwords_do_not_match'))
       return
     }
     setIsLoading(true)
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
       })
       setStep(4)
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Code incorrect ou expiré')
+      toast.error(err.response?.data?.message || t('invalid_or_expired_code'))
       setStep(2) // Go back to OTP step
       setOtp(['', '', '', '', '', ''])
     } finally {
@@ -102,11 +102,11 @@ export default function ForgotPassword() {
     setResending(true)
     try {
       const res = await authApi.forgotPassword({ email })
-      toast.success('Nouveau code envoyé !')
+      toast.success(t('otp_sent'))
       setOtp(['', '', '', '', '', ''])
       otpRefs.current[0]?.focus()
     } catch (err) {
-      toast.error('Erreur lors du renvoi')
+      toast.error(t('resend_error'))
     } finally {
       setResending(false)
     }
@@ -126,7 +126,7 @@ export default function ForgotPassword() {
           <div className="text-center mb-8">
             <img src="/esl-logo.png" alt="ESL" className="w-20 h-20 object-cover rounded-full shadow-xl border-4 border-white/10 mx-auto mb-4" />
             <h1 className="text-3xl font-display font-bold text-white">ESL</h1>
-            <p className="text-gray-400 text-sm mt-1">École de Santé de Libreville</p>
+            <p className="text-gray-400 text-sm mt-1">{t('school_name_full')}</p>
           </div>
 
           <div className="card p-8 bg-white/5 backdrop-blur-xl border border-white/10">
@@ -138,7 +138,7 @@ export default function ForgotPassword() {
                   <Link to="/login" className="flex items-center gap-1 text-gray-400 hover:text-white text-sm mb-5 transition-colors">
                     <ArrowLeftIcon className="w-4 h-4" /> {t('back_to_login')}
                   </Link>
-                  <h2 className="text-2xl font-bold text-white mb-2">Mot de passe oublié</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2">{t('forgot_password_title')}</h2>
                   <p className="text-gray-400 text-sm mb-6">{t('forgot_password_desc')}</p>
                   <form onSubmit={handleEmailSubmit} className="space-y-5">
                     <div>
@@ -147,7 +147,7 @@ export default function ForgotPassword() {
                         <EnvelopeIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                           className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
-                          placeholder="exemple@email.com" required />
+                          placeholder={t('email_placeholder')} required />
                       </div>
                     </div>
                     <button type="submit" disabled={isLoading}
@@ -167,7 +167,7 @@ export default function ForgotPassword() {
                   <h2 className="text-2xl font-bold text-white mb-2">{t('verification')}</h2>
                   <div className="flex items-center gap-2 mb-6 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
                     <EnvelopeIcon className="w-5 h-5 text-blue-400 flex-shrink-0" />
-                    <p className="text-sm text-blue-200">Code envoyé à <strong>{maskedEmail}</strong>. Valable 10 minutes.</p>
+                    <p className="text-sm text-blue-200">{t('otp_sent_to_prefix')} <strong>{maskedEmail}</strong>. {t('otp_valid_10_min')}</p>
                   </div>
                   <form onSubmit={handleOtpSubmit} className="space-y-6">
                     <div>
@@ -239,11 +239,11 @@ export default function ForgotPassword() {
                   <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
                     <CheckCircleIcon className="w-8 h-8 text-green-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Mot de passe réinitialisé !</h2>
-                  <p className="text-gray-400 text-sm mb-6">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">{t('password_reset_success_title')}</h2>
+                  <p className="text-gray-400 text-sm mb-6">{t('password_reset_success_desc')}</p>
                   <button onClick={() => navigate('/login')}
                     className="w-full py-4 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 text-white font-bold transition-all">
-                    Se connecter
+                    {t('sign_in')}
                   </button>
                 </motion.div>
               )}
@@ -252,7 +252,7 @@ export default function ForgotPassword() {
           </div>
 
           <p className="text-center text-sm text-gray-500 mt-8">
-            © 2026 ESL - École de Santé de Libreville.
+            © 2026 ESL - {t('school_name_full')}.
           </p>
         </motion.div>
       </div>

@@ -8,6 +8,7 @@ import {
   PrinterIcon,
 } from '@heroicons/react/24/outline'
 import { registrarApi, studentApi, teacherApi } from '../../services/api'
+import { useI18n } from '../../i18n/index.jsx'
 import { esc, openReportAsync } from '../../utils/reportPrint'
 
 const ROLES = ['admin', 'finance', 'registrar', 'teacher', 'student']
@@ -21,6 +22,7 @@ const ROLE_LABELS = {
 const LEVEL_ORDER = ['L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3']
 
 function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGenerate, loading, delay = 0 }) {
+  const { t } = useI18n()
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -45,13 +47,14 @@ function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGener
           ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           : <PrinterIcon className="w-4 h-4" />
         }
-        {loading ? 'Génération…' : 'Voir le rapport'}
+        {loading ? t('generating') : t('view_report')}
       </button>
     </motion.div>
   )
 }
 
 export default function RegistrarReports() {
+  const { t } = useI18n()
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [loadingLevels, setLoadingLevels] = useState(false)
   const [loadingDepts, setLoadingDepts] = useState(false)
@@ -60,7 +63,7 @@ export default function RegistrarReports() {
   const handleUsers = async () => {
     setLoadingUsers(true)
     try {
-      if (!(await openReportAsync('Rapport des Utilisateurs', async () => {
+      if (!(await openReportAsync(t('registrar_report_users_title'), async () => {
         const results = await Promise.all(ROLES.map(r => registrarApi.getUsers(r)))
         const byRole = {}
         ROLES.forEach((r, i) => {
@@ -99,12 +102,12 @@ export default function RegistrarReports() {
           Total utilisateurs : <strong>${total}</strong> &nbsp;—&nbsp; ${summary}
         </div>
         ${sections}`
-        return { subtitle: 'Liste Complète des Utilisateurs par Rôle', body }
+        return { subtitle: t('registrar_report_users_subtitle'), body }
       }))) {
-        toast.error('Autorisez les pop-ups pour afficher le rapport')
+        toast.error(t('popup_blocked'))
       }
     } catch {
-      toast.error('Erreur lors de la génération du rapport utilisateurs')
+      toast.error(t('error'))
     } finally {
       setLoadingUsers(false)
     }
@@ -114,7 +117,7 @@ export default function RegistrarReports() {
   const handleLevels = async () => {
     setLoadingLevels(true)
     try {
-      if (!(await openReportAsync('Étudiants par Niveau', async () => {
+      if (!(await openReportAsync(t('registrar_report_students_by_level_title'), async () => {
         const res = await studentApi.getAll({ per_page: 2000 })
         const students = res.data?.data?.data || res.data?.data || []
 
@@ -164,12 +167,12 @@ export default function RegistrarReports() {
           ${sortedLevels.map(l => `${l}: ${grouped[l].length}`).join(' &nbsp;·&nbsp; ')}
         </div>
         ${sections}`
-        return { subtitle: 'Liste des Étudiants Organisée par Niveau Académique', body }
+        return { subtitle: t('registrar_report_students_by_level_subtitle'), body }
       }))) {
-        toast.error('Autorisez les pop-ups pour afficher le rapport')
+        toast.error(t('popup_blocked'))
       }
     } catch {
-      toast.error('Erreur lors de la génération du rapport')
+      toast.error(t('error'))
     } finally {
       setLoadingLevels(false)
     }
@@ -179,7 +182,7 @@ export default function RegistrarReports() {
   const handleDepts = async () => {
     setLoadingDepts(true)
     try {
-      if (!(await openReportAsync('Enseignants par Département', async () => {
+      if (!(await openReportAsync(t('registrar_report_teachers_by_department_title'), async () => {
         const res = await teacherApi.getAll({ per_page: 1000 })
         const teachers = res.data?.data?.data || res.data?.data || []
 
@@ -224,12 +227,12 @@ export default function RegistrarReports() {
           <strong>${Object.keys(byFaculty).length} faculté${Object.keys(byFaculty).length > 1 ? 's' : ''}</strong>
         </div>
         ${sections}`
-        return { subtitle: 'Liste des Enseignants par Faculté et Département', body }
+        return { subtitle: t('registrar_report_teachers_by_department_subtitle'), body }
       }))) {
-        toast.error('Autorisez les pop-ups pour afficher le rapport')
+        toast.error(t('popup_blocked'))
       }
     } catch {
-      toast.error('Erreur lors de la génération du rapport')
+      toast.error(t('error'))
     } finally {
       setLoadingDepts(false)
     }
