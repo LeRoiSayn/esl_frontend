@@ -13,7 +13,7 @@ import {
   CalendarIcon,
   PrinterIcon,
 } from '@heroicons/react/24/outline'
-import { esc, fmtRwf, openReportSafe } from '../../utils/reportPrint'
+import { esc, fmtRwf, openReport } from '../../utils/reportPrint'
 
 export default function StudentFees() {
   const { user } = useAuth()
@@ -103,7 +103,9 @@ export default function StudentFees() {
         <th style="text-align:right">${t('amount')}</th>
       </tr></thead><tbody>${payRows}</tbody></table>`
 
-    openReportSafe(t('financial_report_title'), `${t('financial_report_title')} — ${studentName}`, body)
+    if (!openReport(t('financial_report_title'), `${t('financial_report_title')} — ${studentName}`, body)) {
+      alert(t('popup_blocked_allow'))
+    }
   }
 
   const getStatusConfig = (status) => {

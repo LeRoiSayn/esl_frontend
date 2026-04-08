@@ -56,6 +56,7 @@ import StudentELearning from './pages/student/ELearning'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import NotFound from './pages/NotFound'
+import ReportViewer from './pages/ReportViewer'
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -116,6 +117,16 @@ function App() {
         {/* Public Routes */}
         <Route path="/login" element={user ? <Navigate to={`/${user.role}`} replace /> : <Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Report viewer (opens in a clean new tab) */}
+        <Route
+          path="/report-viewer"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'registrar', 'finance', 'teacher', 'student']}>
+              <ReportViewer />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Admin Routes */}
         <Route

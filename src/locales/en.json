@@ -494,6 +494,8 @@
   "fees_details": "Fees details",
   "total_due": "Total due",
   "popup_blocked_allow": "Please allow pop-ups to view the report",
+  "report_opening": "Opening report in a new tab…",
+  "report_open_error": "The report could not be opened. Please click again, and ensure pop-ups are allowed for this site.",
   "no_fees": "No fees",
   "financial_report_title": "Financial Report",
 

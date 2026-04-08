@@ -494,6 +494,8 @@
   "fees_details": "Détail des frais",
   "total_due": "Total dû",
   "popup_blocked_allow": "Autorisez les pop-ups pour afficher le rapport",
+  "report_opening": "Ouverture du rapport dans un nouvel onglet…",
+  "report_open_error": "Le rapport n'a pas pu s'ouvrir. Réessayez et vérifiez que les pop-ups sont autorisés pour ce site.",
   "no_fees": "Aucun frais",
   "financial_report_title": "Rapport Financier",
 

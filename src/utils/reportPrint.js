@@ -136,37 +136,27 @@ export function buildReportDocumentHtml(title, subtitle, body) {
 </body></html>`
 }
 
+function _randKey() {
+  return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
+}
+
+function _openReportViewerTab(key) {
+  const url = `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`
+  return window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 /**
  * Open report in a new tab (same event tick as the click). Use when body is already available.
  */
 export function openReport(title, subtitle, body) {
-  const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
+  const key = _randKey()
+  const w = _openReportViewerTab(key)
   if (!w) return false
   try {
-    w.document.open()
-    w.document.write(buildReportDocumentHtml(title, subtitle, body))
-    w.document.close()
-    w.focus()
-  } catch {
+    const html = buildReportDocumentHtml(title, subtitle, body)
+    sessionStorage.setItem(`esl_report:${key}`, html)
     try {
-      w.close()
-    } catch (_) {}
-    return false
-  }
-  return true
-}
-
-/**
- * Fallback: render the report in the current tab.
- * This avoids browser pop-up permissions entirely.
- */
-export function openReportInCurrentTab(title, subtitle, body) {
-  try {
-    document.open()
-    document.write(buildReportDocumentHtml(title, subtitle, body))
-    document.close()
-    try {
-      window.scrollTo(0, 0)
+      w.focus()
     } catch (_) {}
     return true
   } catch (_) {
@@ -175,64 +165,27 @@ export function openReportInCurrentTab(title, subtitle, body) {
 }
 
 /**
- * Prefer new tab, fallback to current tab.
- */
-export function openReportSafe(title, subtitle, body) {
-  return openReport(title, subtitle, body) || openReportInCurrentTab(title, subtitle, body)
-}
-
-const LOADING_HTML = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">${VIEWPORT_META}<title>…</title></head><body style="font-family:system-ui,sans-serif;padding:24px;text-align:center;color:#374151">Chargement…</body></html>`
-
-/**
  * For reports built after async work: opens a tab immediately (user gesture), then fills content.
  * load() must return { subtitle, body }.
  */
 export async function openReportAsync(title, load) {
-  const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
+  const key = _randKey()
+  const w = _openReportViewerTab(key)
   if (!w) return false
+  const { subtitle, body } = await load()
+  const html = buildReportDocumentHtml(title, subtitle, body)
+  sessionStorage.setItem(`esl_report:${key}`, html)
   try {
-    w.document.open()
-    w.document.write(LOADING_HTML)
-    w.document.close()
-    const { subtitle, body } = await load()
-    w.document.open()
-    w.document.write(buildReportDocumentHtml(title, subtitle, body))
-    w.document.close()
-    try {
-      w.focus()
-    } catch (_) {}
-  } catch (e) {
-    try {
-      w.close()
-    } catch (_) {}
-    throw e
-  }
+    w.focus()
+  } catch (_) {}
   return true
 }
 
 /**
- * Async report: if pop-up is blocked, render in current tab after load().
+ * Prefer new tab only. If browser blocks pop-ups, return false so caller can show a toast.
  */
 export async function openReportAsyncSafe(title, load) {
-  const w = window.open('about:blank', '_blank', 'noopener,noreferrer')
-  if (!w) {
-    const { subtitle, body } = await load()
-    return openReportInCurrentTab(title, subtitle, body)
-  }
-  try {
-    w.document.open()
-    w.document.write(LOADING_HTML)
-    w.document.close()
-    const { subtitle, body } = await load()
-    w.document.open()
-    w.document.write(buildReportDocumentHtml(title, subtitle, body))
-    w.document.close()
-    try { w.focus() } catch (_) {}
-  } catch (e) {
-    try { w.close() } catch (_) {}
-    throw e
-  }
-  return true
+  return openReportAsync(title, load)
 }
 
 /**
