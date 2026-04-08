@@ -194,7 +194,7 @@ export default function StudentFees() {
   const daysUntilDue = nextDue ? Math.ceil((nextDue._dueMs - today.getTime()) / 86400000) : null
   const alertLevel = isPaid ? 'ok'
     : daysUntilDue !== null && daysUntilDue <= 0  ? 'overdue'
-    : daysUntilDue !== null && daysUntilDue <= 3  ? 'urgent'
+    : daysUntilDue !== null && daysUntilDue <= 2  ? 'urgent'
     : daysUntilDue !== null && daysUntilDue <= 7  ? 'warning'
     : daysUntilDue !== null && daysUntilDue <= 30 ? 'soon'
     : 'neutral'
@@ -213,17 +213,18 @@ export default function StudentFees() {
   const nextDueDateFmt = nextDue ? new Date(nextDue.due_date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) : ''
 
   const bannerTitle = alertLevel === 'ok' ? t('fees_paid_status')
-    : alertLevel === 'overdue' ? 'Paiement en retard !'
-    : alertLevel === 'urgent'  ? `Paiement dû dans ${daysUntilDue} jour${daysUntilDue !== 1 ? 's' : ''} !`
-    : alertLevel === 'warning' ? `Prochain paiement dans ${daysUntilDue} jours`
-    : alertLevel === 'soon'    ? `Prochain paiement dans ${daysUntilDue} jours`
-    : 'Frais en attente — prochaine échéance à venir'
+    : alertLevel === 'overdue' ? t('payment_overdue_banner')
+    : alertLevel === 'urgent'  ? `${t('payment_due_in')} ${daysUntilDue} ${daysUntilDue !== 1 ? t('days') : t('day')} !`
+    : alertLevel === 'warning' ? `${t('next_payment_in')} ${daysUntilDue} ${daysUntilDue !== 1 ? t('days') : t('day')}`
+    : alertLevel === 'soon'    ? `${t('next_payment_in')} ${daysUntilDue} ${daysUntilDue !== 1 ? t('days') : t('day')}`
+    : t('fees_pending_neutral')
 
   const bannerSub = alertLevel === 'ok' ? t('fees_all_paid')
-    : alertLevel === 'overdue' ? `Solde dû en retard : ${formatCurrency(nextDueBalance)} — Veuillez régulariser.`
+    : alertLevel === 'overdue'
+        ? t('overdue_balance_notice').replace('{amount}', formatCurrency(nextDueBalance))
     : (alertLevel === 'urgent' || alertLevel === 'warning' || alertLevel === 'soon')
-        ? `Prochaine tranche : ${formatCurrency(nextDueBalance)} — Échéance : ${nextDueDateFmt}`
-    : `Solde restant total : ${formatCurrency(balance)}`
+        ? t('next_installment_notice').replace('{amount}', formatCurrency(nextDueBalance)).replace('{date}', nextDueDateFmt)
+    : `${t('total_remaining_prefix')} ${formatCurrency(balance)}`
 
   // Payment history: prefer all_payments (all years) from backend, fallback to current fees
   const allPaymentsHistory = data.all_payments?.length > 0
@@ -239,7 +240,7 @@ export default function StudentFees() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('school_fees')}</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Année académique {data.academic_year || `${new Date().getFullYear()} - ${new Date().getFullYear() + 1}`}
+            {t('academic_year')} {data.academic_year || `${new Date().getFullYear()} - ${new Date().getFullYear() + 1}`}
           </p>
         </div>
         <button
@@ -247,7 +248,7 @@ export default function StudentFees() {
           className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shrink-0"
         >
           <PrinterIcon className="w-4 h-4" />
-          Voir le rapport financier
+          {t('view_report')}
         </button>
       </motion.div>
 
@@ -350,16 +351,16 @@ export default function StudentFees() {
                           <td className="px-6 py-3" colSpan={4}>
                             <div className="flex items-center gap-2">
                               <CalendarIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                              <span className="font-semibold text-gray-900 dark:text-white">{fee.fee_type?.name || 'Frais'}</span>
+                              <span className="font-semibold text-gray-900 dark:text-white">{fee.fee_type?.name || t('fee_type')}</span>
                               <span className="text-xs text-blue-600 dark:text-blue-400 ml-1">
-                                Plan {fee.installment_plan.plan_type === 'monthly' ? 'mensuel' : 'trimestriel'} — {fee.installment_plan.periods} tranches — Total : {formatCurrency(fee.amount)}
+                                {t(fee.installment_plan.plan_type === 'monthly' ? 'monthly' : 'quarterly')} — {fee.installment_plan.periods} {t('installments')} — {t('total')} : {formatCurrency(fee.amount)}
                               </span>
                             </div>
                           </td>
                           <td className="px-6 py-3" colSpan={2}>
                             <div className="text-right text-xs text-gray-500">
-                              Payé : <span className="text-green-600 font-medium">{formatCurrency(fee.paid_amount)}</span>
-                              {' · '}Restant : <span className="text-red-600 font-medium">{formatCurrency(parseFloat(fee.amount) - parseFloat(fee.paid_amount || 0))}</span>
+                              {t('paid')} : <span className="text-green-600 font-medium">{formatCurrency(fee.paid_amount)}</span>
+                              {' · '}{t('remaining')} : <span className="text-red-600 font-medium">{formatCurrency(parseFloat(fee.amount) - parseFloat(fee.paid_amount || 0))}</span>
                             </div>
                           </td>
                         </tr>
@@ -379,8 +380,8 @@ export default function StudentFees() {
                                       : <ClockIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                   }
                                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                                    Tranche {inst.number}
-                                    {isNext && <span className="ml-2 text-xs font-semibold text-orange-600 dark:text-orange-400">← prochaine</span>}
+                                    {t('installment')} {inst.number}
+                                    {isNext && <span className="ml-2 text-xs font-semibold text-orange-600 dark:text-orange-400">{t('next_due_label')}</span>}
                                   </span>
                                 </div>
                               </td>
@@ -415,7 +416,7 @@ export default function StudentFees() {
                   return (
                     <tr key={fee.id} className="hover:bg-gray-50 dark:hover:bg-dark-300 transition-colors">
                       <td className="px-6 py-4">
-                        <span className="font-medium text-gray-900 dark:text-white">{fee.fee_type?.name || 'Frais'}</span>
+                        <span className="font-medium text-gray-900 dark:text-white">{fee.fee_type?.name || t('fee_type')}</span>
                       </td>
                       <td className="px-6 py-4 text-right font-medium text-gray-900 dark:text-white">{formatCurrency(fee.amount)}</td>
                       <td className="px-6 py-4 text-right text-green-600 dark:text-green-400">{formatCurrency(fee.paid_amount)}</td>

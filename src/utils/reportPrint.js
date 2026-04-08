@@ -140,9 +140,22 @@ function _randKey() {
   return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
 }
 
-function _openReportViewerTab(key) {
-  const url = `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`
-  return window.open(url, '_blank', 'noopener,noreferrer')
+function _reportUrl(key) {
+  return `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`
+}
+
+// Opens report-viewer tab via anchor click (bypasses popup blockers).
+export function openReportViewer(key) {
+  const url = _reportUrl(key)
+  // Use an <a> click — treated as user-initiated link, bypasses most popup blockers
+  const a = document.createElement('a')
+  a.href = url
+  a.target = '_blank'
+  a.rel = 'noopener noreferrer'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  return true
 }
 
 function _lsKey(key) {
@@ -162,18 +175,10 @@ function _saveReportHtml(key, html) {
  */
 export function openReport(title, subtitle, body) {
   const key = _randKey()
-  const w = _openReportViewerTab(key)
-  if (!w) return false
-  try {
-    const html = buildReportDocumentHtml(title, subtitle, body)
-    _saveReportHtml(key, html)
-    try {
-      w.focus()
-    } catch (_) {}
-    return true
-  } catch (_) {
-    return false
-  }
+  const html = buildReportDocumentHtml(title, subtitle, body)
+  _saveReportHtml(key, html)
+  openReportViewer(key)
+  return true
 }
 
 /**
@@ -182,14 +187,11 @@ export function openReport(title, subtitle, body) {
  */
 export async function openReportAsync(title, load) {
   const key = _randKey()
-  const w = _openReportViewerTab(key)
-  if (!w) return false
+  // Open the tab immediately (same user-gesture tick), before await
+  openReportViewer(key)
   const { subtitle, body } = await load()
   const html = buildReportDocumentHtml(title, subtitle, body)
   _saveReportHtml(key, html)
-  try {
-    w.focus()
-  } catch (_) {}
   return true
 }
 

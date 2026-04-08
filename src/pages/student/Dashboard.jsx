@@ -74,6 +74,8 @@ export default function StudentDashboard() {
   const paidAmount = stats?.fees_summary?.paid || 0
   const paymentPercent = totalFees > 0 ? Math.round((paidAmount / totalFees) * 100) : 100
   const daysUntilDue = stats?.fees_summary?.days_until_due ?? null
+  // next_due_amount = this month's installment (or full fee balance if no plan)
+  const nextDueAmount = stats?.fees_summary?.next_due_amount ?? pendingFees
   // Only show banner when payment is due within 7 days (orange level) or overdue
   const showBanner = pendingFees > 0 && daysUntilDue !== null && daysUntilDue <= 7
 
@@ -85,33 +87,33 @@ export default function StudentDashboard() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className={`rounded-xl p-4 flex items-center gap-4 ${
-            daysUntilDue < 0
+            daysUntilDue <= 2
               ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700'
               : 'bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700'
           }`}
         >
-          <div className={`p-3 rounded-full ${daysUntilDue < 0 ? 'bg-red-100 dark:bg-red-900/40' : 'bg-orange-100 dark:bg-orange-900/40'}`}>
-            <ExclamationTriangleIcon className={`w-7 h-7 ${daysUntilDue < 0 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`} />
+          <div className={`p-3 rounded-full ${daysUntilDue <= 2 ? 'bg-red-100 dark:bg-red-900/40' : 'bg-orange-100 dark:bg-orange-900/40'}`}>
+            <ExclamationTriangleIcon className={`w-7 h-7 ${daysUntilDue <= 2 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`} />
           </div>
           <div className="flex-1">
-            <h3 className={`font-semibold text-lg ${daysUntilDue < 0 ? 'text-red-800 dark:text-red-300' : 'text-orange-800 dark:text-orange-300'}`}>
+            <h3 className={`font-semibold text-lg ${daysUntilDue <= 2 ? 'text-red-800 dark:text-red-300' : 'text-orange-800 dark:text-orange-300'}`}>
               {daysUntilDue < 0 ? t('payment_overdue') : t('payment_due_soon')}
             </h3>
-            <p className={`text-sm ${daysUntilDue < 0 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`}>
+            <p className={`text-sm ${daysUntilDue <= 2 ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`}>
               {daysUntilDue < 0
-                ? t('remaining_balance_notice').replace('{amount}', formatCurrency(pendingFees))
-                : t('payment_due_in_days').replace('{days}', daysUntilDue).replace('{amount}', formatCurrency(pendingFees))
+                ? t('remaining_balance_notice').replace('{amount}', formatCurrency(nextDueAmount))
+                : t('payment_due_in_days').replace('{days}', daysUntilDue).replace('{amount}', formatCurrency(nextDueAmount))
               }
             </p>
             {totalFees > 0 && (
               <div className="mt-2">
                 <div className="flex justify-between text-xs mb-1">
-                  <span className={daysUntilDue < 0 ? 'text-red-500' : 'text-orange-500'}>{paymentPercent}% {t('paid_percent')}</span>
-                  <span className={daysUntilDue < 0 ? 'text-red-500' : 'text-orange-500'}>{formatCurrency(paidAmount)} / {formatCurrency(totalFees)}</span>
+                  <span className={daysUntilDue <= 2 ? 'text-red-500' : 'text-orange-500'}>{paymentPercent}% {t('paid_percent')}</span>
+                  <span className={daysUntilDue <= 2 ? 'text-red-500' : 'text-orange-500'}>{formatCurrency(paidAmount)} / {formatCurrency(totalFees)}</span>
                 </div>
-                <div className={`h-2 rounded-full overflow-hidden ${daysUntilDue < 0 ? 'bg-red-200 dark:bg-red-900/40' : 'bg-orange-200 dark:bg-orange-900/40'}`}>
+                <div className={`h-2 rounded-full overflow-hidden ${daysUntilDue <= 2 ? 'bg-red-200 dark:bg-red-900/40' : 'bg-orange-200 dark:bg-orange-900/40'}`}>
                   <div
-                    className={`h-full rounded-full transition-all ${daysUntilDue < 0 ? 'bg-red-500' : 'bg-orange-500'}`}
+                    className={`h-full rounded-full transition-all ${daysUntilDue <= 2 ? 'bg-red-500' : 'bg-orange-500'}`}
                     style={{ width: `${paymentPercent}%` }}
                   />
                 </div>

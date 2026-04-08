@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { studentApi, adminApi, courseApi } from '../../services/api'
 import { useI18n } from '../../i18n/index.jsx'
+import { openReportViewer } from '../../utils/reportPrint'
 import DataTable from '../../components/DataTable'
 import {
   EyeIcon,
@@ -427,9 +428,7 @@ ${yearsHtml}
     try {
       const key = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
       localStorage.setItem(`esl_report:${key}`, JSON.stringify({ html, createdAt: Date.now() }))
-      const url = `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`
-      const w = window.open(url, '_blank', 'noopener,noreferrer')
-      if (!w) toast.error(t('popup_blocked'))
+      openReportViewer(key)
     } catch {
       toast.error(t('error'))
     }
@@ -566,9 +565,7 @@ ${paymentsSection}
     try {
       const key = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`
       localStorage.setItem(`esl_report:${key}`, JSON.stringify({ html, createdAt: Date.now() }))
-      const url = `${window.location.origin}/report-viewer?key=${encodeURIComponent(key)}`
-      const w = window.open(url, '_blank', 'noopener,noreferrer')
-      if (!w) toast.error(t('popup_blocked'))
+      openReportViewer(key)
     } catch {
       toast.error(t('error'))
     }
