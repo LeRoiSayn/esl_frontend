@@ -92,7 +92,7 @@ export default function FinancePayments() {
   const remaining = selectedFee ? parseFloat(selectedFee.amount) - parseFloat(selectedFee.paid_amount) : 0
   const getBalance = (fee) => parseFloat(fee.amount) - parseFloat(fee.paid_amount)
   const isRegistration = (fee) => fee.fee_type?.category === 'registration'
-  const formatCurrency = (v) => new Intl.NumberFormat('fr-FR').format(v) + ' RWF'
+  const formatCurrency = (v) => new Intl.NumberFormat('fr-FR').format(v) + ' FCFA'
 
   const daysUntil = (dateLike) => {
     if (!dateLike) return null

@@ -36,7 +36,7 @@ export default function StudentFees() {
     }
   }
 
-  const formatCurrency = (amount) => new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR').format(amount || 0) + ' RWF'
+  const formatCurrency = (amount) => new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR').format(amount || 0) + ' FCFA'
 
   const handleFinancialReport = () => {
     const fees = data.fees || []

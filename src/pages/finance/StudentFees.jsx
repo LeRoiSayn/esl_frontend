@@ -74,7 +74,7 @@ export default function FinanceStudentFees() {
   }, [fees])
 
   // ── Helpers ──────────────────────────────────────────────────
-  const fmt = (v) => new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR').format(v || 0) + ' RWF'
+  const fmt = (v) => new Intl.NumberFormat(language === 'en' ? 'en-US' : 'fr-FR').format(v || 0) + ' FCFA'
   const isReg = (f) => f.fee_type?.category === 'registration'
   const bal   = (f) => parseFloat(f.amount || 0) - parseFloat(f.paid_amount || 0)
 
@@ -470,7 +470,7 @@ export default function FinanceStudentFees() {
             </select>
           </div>
           <div>
-            <label className="label">{t('amount')} (RWF)</label>
+            <label className="label">{t('amount')} (FCFA)</label>
             <input type="number" value={formData.amount} onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))} className="input" required min="0" />
           </div>
           <div>

@@ -507,7 +507,7 @@ const Chatbot = () => {
                           </div>
                           <div className="p-2 bg-gray-50 dark:bg-dark-300 rounded-lg col-span-2">
                             <p className="text-gray-500">{uiL.balance}</p>
-                            <p className="font-bold text-amber-600">{(msg.data.remaining ?? 0).toLocaleString()} RWF</p>
+                            <p className="font-bold text-amber-600">{(msg.data.remaining ?? 0).toLocaleString()} FCFA</p>
                           </div>
                         </div>
                         <button className="mt-3 w-full py-2 text-xs text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors">

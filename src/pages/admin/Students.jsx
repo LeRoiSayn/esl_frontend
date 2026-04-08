@@ -440,7 +440,7 @@ ${yearsHtml}
     const studentName = `${escHtml(student.user?.first_name)} ${escHtml(student.user?.last_name)}`
     const printDate = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })
 
-    const fmt = (amount) => new Intl.NumberFormat('fr-FR').format(amount || 0) + ' RWF'
+    const fmt = (amount) => new Intl.NumberFormat('fr-FR').format(amount || 0) + ' FCFA'
     const totalAmount = feesDetail.reduce((s, f) => s + parseFloat(f.amount || 0), 0)
     const totalPaid = feesDetail.reduce((s, f) => s + parseFloat(f.paid_amount || 0), 0)
     const totalBalance = totalAmount - totalPaid

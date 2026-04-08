@@ -15,7 +15,7 @@ const _backendRoot = _apiRoot ? _apiRoot.replace(/\/api\/?$/, '') : ''
 export const LOGO_URL = _backendRoot ? `${_backendRoot}/esl-logo.png` : '/esl-logo.png'
 
 export const fmtRwf = (amount) =>
-  new Intl.NumberFormat('fr-FR').format(Math.round(amount || 0)) + ' RWF'
+  new Intl.NumberFormat('fr-FR').format(Math.round(amount || 0)) + ' FCFA'
 
 export const fmtDate = () =>
   new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })

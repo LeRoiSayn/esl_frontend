@@ -44,7 +44,7 @@ export default function FinanceFeeTypes() {
   const handleDelete = async (item) => { if (!window.confirm('Delete?')) return; try { await feeTypeApi.delete(item.id); toast.success(t('item_deleted')); fetchData() } catch (error) { toast.error(t('error')) } }
   const handleToggle = async (item) => { try { await feeTypeApi.toggle(item.id); toast.success(t(item.is_active ? 'deactivated' : 'activated')); fetchData() } catch (error) { toast.error(t('error')) } }
 
-  const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR').format(amount) + ' RWF'
+  const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA'
 
   const columns = [
     { header: t('fee_type'), cell: (row) => (

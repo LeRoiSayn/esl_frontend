@@ -20,7 +20,7 @@ export default function FinanceDashboard() {
     catch (_) { } finally { setLoading(false) }
   }
 
-  const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR').format(amount) + ' RWF'
+  const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA'
 
   if (loading) return (
     <div className="space-y-6 animate-pulse">
