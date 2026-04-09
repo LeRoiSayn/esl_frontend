@@ -55,6 +55,7 @@ const menuItems = {
     { nameKey: 'menu_finance_staff', path: '/registrar/users?role=finance', icon: CurrencyDollarIcon },
     { nameKey: 'menu_registrars', path: '/registrar/users?role=registrar', icon: ClipboardDocumentListIcon },
     { nameKey: 'menu_reports', path: '/registrar/reports', icon: ChartBarIcon },
+    { nameKey: 'menu_system_config', path: '/registrar/system-config', icon: WrenchScrewdriverIcon },
     { nameKey: 'menu_settings', path: '/registrar/settings', icon: Cog6ToothIcon },
   ],
   finance: [

@@ -173,7 +173,8 @@ function App() {
           <Route path="teachers" element={<RegistrarTeachers />} />
           <Route path="users" element={<RegistrarUsers />} />
           <Route path="reports" element={<RegistrarReports />} />
-          <Route path="settings" element={<RegistrarSettings />} />
+          <Route path="system-config" element={<RegistrarSettings />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 

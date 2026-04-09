@@ -56,6 +56,18 @@ const ELearning = () => {
     fetchData();
   }, []);
 
+  // Refetch tab content whenever the active tab or selected course changes.
+  // This ensures quizzes/materials/assignments are always fresh when the user
+  // switches tabs, regardless of whether they changed the course first.
+  useEffect(() => {
+    const cid = selectedCourse?.course_id || selectedCourse?.id;
+    if (!cid) return;
+    if (activeTab === 'materials')    fetchMaterials(cid);
+    else if (activeTab === 'quizzes') fetchQuizzes(cid);
+    else if (activeTab === 'assignments') fetchAssignments(cid);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, selectedCourse]);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
@@ -86,7 +98,8 @@ const ELearning = () => {
       const response = await api.get(`/elearning/materials/course/${courseId}`);
       setMaterials(response.data.materials || []);
     } catch (_) {
-      setMaterials([]);
+      toast.error(t('error'));
+      // Keep existing data — do not clear on transient errors
     }
   };
 
@@ -95,7 +108,8 @@ const ELearning = () => {
       const response = await api.get(`/elearning/quizzes/course/${courseId}`);
       setQuizzes(response.data.quizzes || []);
     } catch (_) {
-      setQuizzes([]);
+      toast.error(t('error'));
+      // Keep existing data — do not clear on transient errors
     }
   };
 
@@ -106,7 +120,8 @@ const ELearning = () => {
       );
       setAssignments(response.data.assignments || []);
     } catch (_) {
-      setAssignments([]);
+      toast.error(t('error'));
+      // Keep existing data — do not clear on transient errors
     }
   };
 
@@ -117,11 +132,7 @@ const ELearning = () => {
     setSelectedCourse(course);
     setVisitedTabs(new Set(["courses"]));
     setActiveTab("courses");
-    if (courseId) {
-      if (activeTab === "materials") fetchMaterials(courseId);
-      if (activeTab === "quizzes") fetchQuizzes(courseId);
-      if (activeTab === "assignments") fetchAssignments(courseId);
-    }
+    // Fetching is handled by the useEffect([activeTab, selectedCourse]) above.
   };
 
   const startCourse = async (id) => {
@@ -610,7 +621,7 @@ const ELearning = () => {
     };
 
     return (
-      <Modal title="Uploader un Document" onClose={() => setShowModal(null)}>
+      <Modal title={t('upload_modal_title')} onClose={() => setShowModal(null)}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">Cours</label>
@@ -687,7 +698,7 @@ const ELearning = () => {
           </div>
 
           <div>
-            <label className="label">Titre</label>
+            <label className="label">{t('title')}</label>
             <input
               type="text"
               value={formData.title}
@@ -695,13 +706,13 @@ const ELearning = () => {
                 setFormData({ ...formData, title: e.target.value })
               }
               className="input"
-              placeholder="Titre du document"
+              placeholder={t('title')}
               required
             />
           </div>
 
           <div>
-            <label className="label">Description (optionnel)</label>
+            <label className="label">{t('description')} ({t('optional')})</label>
             <textarea
               value={formData.description}
               onChange={(e) =>
@@ -709,7 +720,7 @@ const ELearning = () => {
               }
               className="input"
               rows={2}
-              placeholder="Description du document..."
+              placeholder={t('description')}
             />
           </div>
 
@@ -723,7 +734,7 @@ const ELearning = () => {
               className="w-4 h-4 text-primary-500 rounded"
             />
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              Autoriser le téléchargement
+              {t('downloadable')}
             </span>
           </label>
 
@@ -740,7 +751,7 @@ const ELearning = () => {
               disabled={isSubmitting || (formData.mode === "file" && !file)}
               className="btn-primary flex-1"
             >
-              {isSubmitting ? "Upload..." : "Uploader"}
+              {isSubmitting ? t('uploading') : t('upload_document_btn')}
             </button>
           </div>
         </form>
@@ -1086,7 +1097,7 @@ const ELearning = () => {
                       </div>
                     ))}
                     <p className="text-xs text-gray-500">
-                      Sélectionnez la bonne réponse
+                      {t('select_correct_answer')}
                     </p>
                   </div>
                 )}
@@ -1191,7 +1202,7 @@ const ELearning = () => {
     };
 
     return (
-      <Modal title="Créer un Devoir" onClose={() => setShowModal(null)}>
+      <Modal title={t('create_assignment_modal_title')} onClose={() => setShowModal(null)}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="label">Cours</label>
@@ -1346,7 +1357,7 @@ const ELearning = () => {
               disabled={isSubmitting}
               className="btn-primary flex-1"
             >
-              {isSubmitting ? "Création..." : "Créer le devoir"}
+              {isSubmitting ? t('creating') : t('create_assignment_btn')}
             </button>
           </div>
         </form>
@@ -1391,7 +1402,7 @@ const ELearning = () => {
         courseName,
       });
       const html = buildReportDocumentHtml(
-        'Résultats du quiz',
+        t('quiz_results_title'),
         data.quiz?.title || '',
         body,
       );
@@ -1406,7 +1417,7 @@ const ELearning = () => {
 
     if (loading)
       return (
-        <Modal title="Résultats du Quiz" onClose={() => setShowModal(null)}>
+        <Modal title={t('quiz_loading_results')} onClose={() => setShowModal(null)}>
           <div className="flex justify-center py-8">
             <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
           </div>
@@ -1415,7 +1426,7 @@ const ELearning = () => {
 
     return (
       <Modal
-        title={`Résultats: ${data?.quiz?.title}`}
+        title={`${t('quiz_results_title')}: ${data?.quiz?.title}`}
         onClose={() => setShowModal(null)}
         size="xl"
       >
@@ -1427,7 +1438,7 @@ const ELearning = () => {
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-dark-200 hover:bg-gray-200 dark:hover:bg-dark-100 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors"
             >
               <PrinterIcon className="w-4 h-4" />
-              Imprimer
+              {t('print')}
             </button>
           </div>
           {/* Stats */}
@@ -1436,31 +1447,31 @@ const ELearning = () => {
               <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                 {data?.stats?.total_attempts}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Tentatives</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_attempts')}</p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/80 dark:border-dark-100 p-3 text-center">
               <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                 {data?.stats?.average_score?.toFixed(1)}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Moyenne</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_average')}</p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/80 dark:border-dark-100 p-3 text-center">
               <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                 {data?.stats?.highest_score?.toFixed(1)}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Max</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_highest')}</p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/50 dark:border-dark-100 p-3 text-center">
               <p className="text-2xl font-bold text-gray-700 dark:text-gray-200 tabular-nums">
                 {data?.stats?.lowest_score?.toFixed(1)}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Min</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_lowest')}</p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/80 dark:border-dark-100 p-3 text-center sm:col-span-1 col-span-2">
               <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
                 {data?.stats?.pass_rate?.toFixed(0)}%
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Réussite</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_pass_rate')}</p>
             </div>
           </div>
 
@@ -1469,10 +1480,10 @@ const ELearning = () => {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-dark-200 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-left">Étudiant</th>
-                  <th className="px-4 py-3 text-center">Score</th>
-                  <th className="px-4 py-3 text-center">Réponses correctes</th>
-                  <th className="px-4 py-3 text-center">Date</th>
+                  <th className="px-4 py-3 text-left">{t('col_student')}</th>
+                  <th className="px-4 py-3 text-center">{t('col_score')}</th>
+                  <th className="px-4 py-3 text-center">{t('col_correct_answers')}</th>
+                  <th className="px-4 py-3 text-center">{t('col_date')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-dark-100">
@@ -1497,16 +1508,14 @@ const ELearning = () => {
                             : "border-gray-300 bg-gray-100 text-gray-600 dark:bg-dark-100 dark:border-dark-100 dark:text-gray-400"
                         }`}
                       >
-                        {attempt.score >= data.quiz.passing_score
-                          ? "Réussi"
-                          : "Non reçu"}
+                        {attempt.score >= data.quiz.passing_score ? t('passed') : t('failed')}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">
                       {attempt.correct_count}/{attempt.total_questions}
                     </td>
                     <td className="px-4 py-3 text-center text-gray-500 text-xs">
-                      {new Date(attempt.completed_at).toLocaleString("fr-FR")}
+                      {new Date(attempt.completed_at).toLocaleString()}
                     </td>
                   </tr>
                 ))}
@@ -1514,7 +1523,7 @@ const ELearning = () => {
             </table>
             {data?.attempts?.length === 0 && (
               <p className="text-center py-8 text-gray-500">
-                Aucune tentative pour ce quiz
+                {t('no_attempts_yet')}
               </p>
             )}
           </div>
@@ -2008,17 +2017,16 @@ const ELearning = () => {
             {t("publish")}
           </button>
         )}
-        {quiz.status === "published" && (
-          <button
-            onClick={() => {
-              setSelectedItem(quiz);
-              setShowModal("quiz-results");
-            }}
-            className="flex-1 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors"
-          >
-            {t("view_results")}
-          </button>
-        )}
+        {/* Results button visible for all non-draft quizzes, or when attempts exist */}
+        <button
+          onClick={() => {
+            setSelectedItem(quiz);
+            setShowModal("quiz-results");
+          }}
+          className="flex-1 py-2 bg-primary-500 text-white rounded-lg text-sm font-medium hover:bg-primary-600 transition-colors"
+        >
+          {t("view_results")}
+        </button>
         <button
           onClick={() => deleteQuiz(quiz.id)}
           className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-100 dark:text-gray-400 rounded-lg"
@@ -2047,7 +2055,7 @@ const ELearning = () => {
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full border border-gray-200 dark:border-dark-100 ${assignment.status === "published" ? "bg-primary-500/10 text-gray-800 dark:text-gray-200" : "bg-gray-100 text-gray-600 dark:bg-dark-100 dark:text-gray-400"}`}
                 >
-                  {assignment.status === "published" ? "Publié" : "Brouillon"}
+                  {assignment.status === "published" ? t("published") : t("draft")}
                 </span>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -2176,7 +2184,7 @@ const ELearning = () => {
                   className="btn-primary flex items-center gap-2"
                 >
                   <PlusIcon className="w-5 h-5" />
-                  Créer un cours
+                  {t('create_online_course')}
                 </button>
               </div>
               {isLoading ? (
@@ -2191,8 +2199,8 @@ const ELearning = () => {
               ) : onlineCourses.length === 0 ? (
                 <EmptyState
                   icon={VideoCameraIcon}
-                  title="Aucun cours en ligne"
-                  description="Créez votre premier cours vidéo pour vos étudiants"
+                  title={t('teacher_no_online_courses')}
+                  description={t('teacher_no_online_courses_desc')}
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -2221,20 +2229,20 @@ const ELearning = () => {
                   className="btn-primary flex items-center gap-2"
                 >
                   <ArrowUpTrayIcon className="w-5 h-5" />
-                  Uploader un document
+                  {t('upload_document_btn')}
                 </button>
               </div>
               {!selectedCourse ? (
                 <EmptyState
                   icon={DocumentTextIcon}
-                  title="Sélectionnez un cours"
-                  description="Choisissez un cours pour voir ou ajouter des documents"
+                  title={t('teacher_select_course')}
+                  description={t('teacher_select_course_docs_desc')}
                 />
               ) : materials.length === 0 ? (
                 <EmptyState
                   icon={DocumentTextIcon}
-                  title="Aucun document"
-                  description="Uploadez des PDF, présentations et autres ressources"
+                  title={t('teacher_no_documents')}
+                  description={t('teacher_no_documents_desc')}
                 />
               ) : (
                 <div className="space-y-3">
@@ -2255,20 +2263,20 @@ const ELearning = () => {
                   className="btn-primary flex items-center gap-2"
                 >
                   <PlusIcon className="w-5 h-5" />
-                  Créer un quiz
+                  {t('create_quiz_btn')}
                 </button>
               </div>
               {!selectedCourse ? (
                 <EmptyState
                   icon={ClipboardDocumentListIcon}
-                  title="Sélectionnez un cours"
-                  description="Choisissez un cours pour voir ou créer des quiz"
+                  title={t('teacher_select_course')}
+                  description={t('teacher_select_course_quizzes_desc')}
                 />
               ) : quizzes.length === 0 ? (
                 <EmptyState
                   icon={ClipboardDocumentListIcon}
-                  title="Aucun quiz"
-                  description="Créez des quiz interactifs avec correction automatique"
+                  title={t('teacher_no_quizzes')}
+                  description={t('teacher_no_quizzes_desc')}
                 />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2289,20 +2297,20 @@ const ELearning = () => {
                   className="btn-primary flex items-center gap-2"
                 >
                   <PlusIcon className="w-5 h-5" />
-                  Créer un devoir
+                  {t('create_assignment_btn')}
                 </button>
               </div>
               {!selectedCourse ? (
                 <EmptyState
                   icon={FolderPlusIcon}
-                  title="Sélectionnez un cours"
-                  description="Choisissez un cours pour voir ou créer des devoirs"
+                  title={t('teacher_select_course')}
+                  description={t('teacher_select_course_assignments_desc')}
                 />
               ) : assignments.length === 0 ? (
                 <EmptyState
                   icon={FolderPlusIcon}
-                  title="Aucun devoir"
-                  description="Créez des devoirs et recevez les soumissions de vos étudiants"
+                  title={t('teacher_no_assignments')}
+                  description={t('teacher_no_assignments_desc')}
                 />
               ) : (
                 <div className="space-y-4">

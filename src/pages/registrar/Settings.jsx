@@ -96,7 +96,7 @@ export default function RegistrarSettings() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">
-            {t('system_settings_title')}
+            {t('menu_system_config')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {t('registrar_settings_subtitle')}
@@ -223,6 +223,7 @@ function SettingRow({ setting, value, isDirty, onChange, onLogoClick, uploading 
 }
 
 function FeeCategoriesEditor({ value, onChange }) {
+  const { t } = useI18n()
   const [draft, setDraft] = useState('')
 
   const add = () => {
@@ -255,7 +256,7 @@ function FeeCategoriesEditor({ value, onChange }) {
           value={draft}
           onChange={e => setDraft(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), add())}
-          placeholder="Nouvelle catégorie..."
+          placeholder={t('new_category_placeholder')}
           className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-100 bg-gray-50 dark:bg-dark-300 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
         <button
@@ -266,7 +267,7 @@ function FeeCategoriesEditor({ value, onChange }) {
         </button>
       </div>
       <p className="text-[11px] text-gray-400 dark:text-gray-500">
-        Les espaces sont convertis en underscores. Appuyez sur Entrée pour ajouter.
+        {t('fee_categories_hint')}
       </p>
     </div>
   )
