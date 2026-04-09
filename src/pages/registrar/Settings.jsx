@@ -5,8 +5,6 @@ import { systemSettingsApi } from '../../services/api'
 import { useI18n } from '../../i18n/index.jsx'
 import {
   BuildingOfficeIcon,
-  AcademicCapIcon,
-  ChartBarIcon,
   CurrencyDollarIcon,
   PhotoIcon,
   CheckIcon,
@@ -16,12 +14,13 @@ import {
 
 const GROUP_ICONS = {
   institution: BuildingOfficeIcon,
-  academic:    AcademicCapIcon,
-  grading:     ChartBarIcon,
   payment:     CurrencyDollarIcon,
 }
 
-export default function SystemSettings() {
+// Groups the registrar is allowed to see and edit
+const REGISTRAR_GROUPS = ['institution', 'payment']
+
+export default function RegistrarSettings() {
   const { t } = useI18n()
   const [grouped, setGrouped]     = useState({})
   const [flat, setFlat]           = useState({})
@@ -94,14 +93,13 @@ export default function SystemSettings() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-10">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-gray-900 dark:text-white">
             {t('system_settings_title')}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {t('system_settings_subtitle')}
+            {t('registrar_settings_subtitle')}
           </p>
         </div>
         <button
@@ -114,44 +112,43 @@ export default function SystemSettings() {
         </button>
       </div>
 
-      {Object.entries(grouped).filter(([group]) => ['academic', 'grading'].includes(group)).map(([group, settings]) => {
-        const Icon = GROUP_ICONS[group] || BuildingOfficeIcon
-        return (
-          <motion.div
-            key={group}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-dark-200 rounded-xl border border-gray-200 dark:border-dark-100 overflow-hidden"
-          >
-            {/* Group header */}
-            <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 dark:border-dark-100">
-              <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
-                <Icon className="w-4 h-4 text-primary-500" />
+      {Object.entries(grouped)
+        .filter(([group]) => REGISTRAR_GROUPS.includes(group))
+        .map(([group, settings]) => {
+          const Icon = GROUP_ICONS[group] || BuildingOfficeIcon
+          return (
+            <motion.div
+              key={group}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white dark:bg-dark-200 rounded-xl border border-gray-200 dark:border-dark-100 overflow-hidden"
+            >
+              <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 dark:border-dark-100">
+                <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-primary-500" />
+                </div>
+                <h2 className="font-semibold text-gray-900 dark:text-white text-sm">
+                  {t(`system_settings_group_${group}`) || group}
+                </h2>
               </div>
-              <h2 className="font-semibold text-gray-900 dark:text-white text-sm">
-                {t(`system_settings_group_${group}`) || group}
-              </h2>
-            </div>
 
-            {/* Settings list */}
-            <div className="divide-y divide-gray-50 dark:divide-dark-100">
-              {settings.map(s => (
-                <SettingRow
-                  key={s.key}
-                  setting={s}
-                  value={flat[s.key] ?? ''}
-                  isDirty={!!dirty[s.key]}
-                  onChange={val => handleChange(s.key, val)}
-                  onLogoClick={s.key === 'institution_logo' ? () => fileRef.current?.click() : null}
-                  uploading={uploading && s.key === 'institution_logo'}
-                />
-              ))}
-            </div>
-          </motion.div>
-        )
-      })}
+              <div className="divide-y divide-gray-50 dark:divide-dark-100">
+                {settings.map(s => (
+                  <SettingRow
+                    key={s.key}
+                    setting={s}
+                    value={flat[s.key] ?? ''}
+                    isDirty={!!dirty[s.key]}
+                    onChange={val => handleChange(s.key, val)}
+                    onLogoClick={s.key === 'institution_logo' ? () => fileRef.current?.click() : null}
+                    uploading={uploading && s.key === 'institution_logo'}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )
+        })}
 
-      {/* Hidden file input for logo */}
       <input
         ref={fileRef}
         type="file"
@@ -168,11 +165,10 @@ function SettingRow({ setting, value, isDirty, onChange, onLogoClick, uploading 
   const isLogo       = setting.key === 'institution_logo'
   const isInteger    = setting.type === 'integer'
   const isBoolean    = setting.type === 'boolean'
-  const isThresholds = setting.key === 'grade_letter_thresholds'
   const isCategories = setting.key === 'fee_categories'
 
   return (
-    <div className={`px-6 py-4 ${isThresholds || isCategories ? '' : 'flex items-center justify-between gap-4'}`}>
+    <div className={`px-6 py-4 ${isCategories ? '' : 'flex items-center justify-between gap-4'}`}>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -187,9 +183,7 @@ function SettingRow({ setting, value, isDirty, onChange, onLogoClick, uploading 
         {setting.description && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{setting.description}</p>}
       </div>
 
-      {isThresholds ? (
-        <LetterThresholdsEditor value={Array.isArray(value) ? value : []} onChange={onChange} />
-      ) : isCategories ? (
+      {isCategories ? (
         <FeeCategoriesEditor value={Array.isArray(value) ? value : []} onChange={onChange} />
       ) : (
         <div className="w-64 flex-shrink-0">
@@ -228,69 +222,6 @@ function SettingRow({ setting, value, isDirty, onChange, onLogoClick, uploading 
   )
 }
 
-// Editor for grade_letter_thresholds: table of {grade, min} pairs
-function LetterThresholdsEditor({ value, onChange }) {
-  const rows = [...value].sort((a, b) => b.min - a.min)
-
-  const update = (index, field, val) => {
-    const updated = rows.map((r, i) =>
-      i === index ? { ...r, [field]: field === 'min' ? Number(val) : val } : r
-    )
-    onChange(updated)
-  }
-
-  const addRow = () => onChange([...rows, { grade: '', min: 0 }])
-
-  const removeRow = (index) => onChange(rows.filter((_, i) => i !== index))
-
-  return (
-    <div className="mt-3 space-y-2">
-      <div className="grid grid-cols-[1fr_1fr_auto] gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 px-1">
-        <span>Lettre</span>
-        <span>Score minimum</span>
-        <span />
-      </div>
-      {rows.map((row, i) => (
-        <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 items-center">
-          <input
-            type="text"
-            value={row.grade}
-            onChange={e => update(i, 'grade', e.target.value.toUpperCase())}
-            maxLength={2}
-            placeholder="A+"
-            className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-100 bg-gray-50 dark:bg-dark-300 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-          <input
-            type="number"
-            value={row.min}
-            onChange={e => update(i, 'min', e.target.value)}
-            min={0}
-            max={100}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-100 bg-gray-50 dark:bg-dark-300 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-          <button
-            onClick={() => removeRow(i)}
-            className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-400 hover:text-red-600 transition-colors"
-          >
-            <XMarkIcon className="w-4 h-4" />
-          </button>
-        </div>
-      ))}
-      <button
-        onClick={addRow}
-        className="flex items-center gap-1.5 text-xs text-primary-600 dark:text-primary-400 hover:underline mt-1"
-      >
-        <PlusIcon className="w-3.5 h-3.5" />
-        Ajouter un seuil
-      </button>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500">
-        Tout score en dessous du seuil le plus bas = F. Les seuils sont triés automatiquement.
-      </p>
-    </div>
-  )
-}
-
-// Editor for fee_categories: editable tag list
 function FeeCategoriesEditor({ value, onChange }) {
   const [draft, setDraft] = useState('')
 

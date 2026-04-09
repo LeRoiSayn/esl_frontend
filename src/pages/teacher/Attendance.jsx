@@ -92,21 +92,36 @@ export default function TeacherAttendance() {
 
           <div className="card p-6">
             <div className="space-y-4">
-              {students.map((item) => (
-                <div key={item.enrollment_id} className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-dark-300">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-medium">{item.student?.user?.first_name?.[0]}{item.student?.user?.last_name?.[0]}</div>
-                    <div><p className="font-medium">{item.student?.user?.first_name} {item.student?.user?.last_name}</p><p className="text-sm text-gray-500">{item.student?.student_id}</p></div>
+              {students.map((item) => {
+                const isSuspended = item.student?.status === 'suspended'
+                return (
+                  <div key={item.enrollment_id} className={`flex items-center justify-between p-4 rounded-xl ${isSuspended ? 'bg-red-50/60 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30' : 'bg-gray-50 dark:bg-dark-300'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white font-medium">{item.student?.user?.first_name?.[0]}{item.student?.user?.last_name?.[0]}</div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{item.student?.user?.first_name} {item.student?.user?.last_name}</p>
+                          {isSuspended && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">{t('suspended')}</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">{item.student?.student_id}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isSuspended ? (
+                        <span className="text-xs text-red-500 dark:text-red-400 italic">{t('attendance_suspended_locked')}</span>
+                      ) : (
+                        ['present', 'absent', 'late', 'excused'].map((status) => (
+                          <button key={status} onClick={() => handleAttendanceChange(item.enrollment_id, status)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${attendance[item.enrollment_id] === status ? `${getStatusColor(status)} text-white` : 'bg-gray-200 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-dark-200'}`}>
+                            {statusLabels[status]}
+                          </button>
+                        ))
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {['present', 'absent', 'late', 'excused'].map((status) => (
-                      <button key={status} onClick={() => handleAttendanceChange(item.enrollment_id, status)} className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${attendance[item.enrollment_id] === status ? `${getStatusColor(status)} text-white` : 'bg-gray-200 dark:bg-dark-100 text-gray-600 dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-dark-200'}`}>
-                        {statusLabels[status]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                )
+              })}
               {students.length === 0 && <p className="text-center text-gray-500 py-8">{t('no_students_class')}</p>}
             </div>
           </div>

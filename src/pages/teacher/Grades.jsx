@@ -81,6 +81,8 @@ export default function TeacherGrades() {
 
   const handleChange = (enrollmentId, field, value) => {
     if (grades[enrollmentId]?.validated_at) return
+    const enrollment = students.find(e => e.id === parseInt(enrollmentId))
+    if (enrollment?.student?.status === 'suspended') return
     setGrades(prev => ({ ...prev, [enrollmentId]: { ...prev[enrollmentId], [field]: value } }))
   }
 
@@ -209,9 +211,10 @@ export default function TeacherGrades() {
                 </thead>
                 <tbody>
                   {students.map(enrollment => {
-                    const row    = grades[enrollment.id] || {}
-                    const locked = !!row.validated_at
-                    const gDb    = enrollment.grades?.[0]
+                    const row         = grades[enrollment.id] || {}
+                    const locked      = !!row.validated_at
+                    const isSuspended = enrollment.student?.status === 'suspended'
+                    const gDb         = enrollment.grades?.[0]
                     const SCORE_FIELDS = ['attendance_score','quiz_score','continuous_assessment','exam_score']
                     const hasAnyScore = SCORE_FIELDS.some((f) => row[f] !== '' && row[f] != null)
                     let final = null
@@ -226,16 +229,24 @@ export default function TeacherGrades() {
                     const inputCls = 'w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-dark-100 bg-white dark:bg-dark-300 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60 disabled:cursor-not-allowed'
                     const s20 = showFinal ? final100To20(final) : null
                     return (
-                      <tr key={enrollment.id} className={locked ? 'bg-green-50/50 dark:bg-green-900/10' : ''}>
+                      <tr key={enrollment.id} className={locked ? 'bg-green-50/50 dark:bg-green-900/10' : isSuspended ? 'bg-red-50/40 dark:bg-red-900/10' : ''}>
                         <td>
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-teal-500 flex items-center justify-center text-white text-xs font-medium">
                               {enrollment.student?.user?.first_name?.[0]}{enrollment.student?.user?.last_name?.[0]}
                             </div>
                             <div>
-                              <span>{enrollment.student?.user?.first_name} {enrollment.student?.user?.last_name}</span>
+                              <div className="flex items-center gap-2">
+                                <span>{enrollment.student?.user?.first_name} {enrollment.student?.user?.last_name}</span>
+                                {isSuspended && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">{t('suspended')}</span>
+                                )}
+                              </div>
                               {locked && (
                                 <p className="text-[10px] text-green-600 dark:text-green-400 font-medium">{t('grade_validated_readonly')}</p>
+                              )}
+                              {isSuspended && !locked && (
+                                <p className="text-[10px] text-red-500 dark:text-red-400 font-medium">{t('grade_suspended_readonly')}</p>
                               )}
                             </div>
                           </div>
@@ -252,7 +263,7 @@ export default function TeacherGrades() {
                               max={[10, 20, 30, 40][idx]}
                               step="0.5"
                               placeholder="—"
-                              disabled={locked}
+                              disabled={locked || isSuspended}
                             />
                           </td>
                         ))}

@@ -69,6 +69,7 @@ export default function StudentDashboard() {
     </div>
   )
 
+  const isSuspended = stats?.student_status === 'suspended'
   const pendingFees = stats?.fees_summary?.pending || 0
   const totalFees = stats?.fees_summary?.total || 0
   const paidAmount = stats?.fees_summary?.paid || 0
@@ -81,6 +82,23 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Suspension Banner */}
+      {isSuspended && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl p-4 flex items-center gap-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-700"
+        >
+          <div className="p-3 rounded-full bg-red-100 dark:bg-red-900/40">
+            <ExclamationTriangleIcon className="w-7 h-7 text-red-600 dark:text-red-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg text-red-800 dark:text-red-300">{t('account_suspended')}</h3>
+            <p className="text-sm text-red-600 dark:text-red-400">{t('account_suspended_message')}</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Payment Status Banner — only shown when due date is within 7 days */}
       {showBanner && (
         <motion.div
