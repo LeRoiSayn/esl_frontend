@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { studentApi, adminApi, courseApi } from '../../services/api'
 import { useI18n } from '../../i18n/index.jsx'
+import { useLevels } from '../../hooks/useLevels'
 import { openReportViewer } from '../../utils/reportPrint'
 import DataTable from '../../components/DataTable'
 import {
@@ -208,7 +209,7 @@ function YearSection({ yearData, defaultOpen }) {
 }
 
 /** Full transcript modal — Year → Semester → Course hierarchy */
-function StudentProfileModal({ studentId, onClose, onPromoted }) {
+function StudentProfileModal({ studentId, onClose, onPromoted, levelCodes: LEVELS_PROP }) {
   const { t } = useI18n()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -231,7 +232,7 @@ function StudentProfileModal({ studentId, onClose, onPromoted }) {
 
   useEffect(() => { loadData() }, [studentId])
 
-  const UNDERGRADUATE_LEVELS = ['L1', 'L2', 'L3']
+  const UNDERGRADUATE_LEVELS = (LEVELS_PROP?.length ? LEVELS_PROP : []).filter(c => c.startsWith('L'))
   const NEXT_LEVEL = { L1: 'L2', L2: 'L3' }
 
   const handlePromote = async () => {
@@ -913,6 +914,7 @@ ${paymentsSection}
 
 export default function AdminStudents() {
   const { t } = useI18n()
+  const { levelCodes } = useLevels()
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedStudentId, setSelectedStudentId] = useState(null)
@@ -1013,6 +1015,7 @@ export default function AdminStudents() {
             studentId={selectedStudentId}
             onClose={() => setSelectedStudentId(null)}
             onPromoted={fetchStudents}
+            levelCodes={levelCodes}
           />
         )}
       </AnimatePresence>

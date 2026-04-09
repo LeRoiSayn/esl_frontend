@@ -8,6 +8,7 @@ import {
 import { dashboardApi, classApi, teacherApi, courseApi, departmentApi } from '../../services/api'
 import StatCard from '../../components/StatCard'
 import { useI18n } from '../../i18n/index.jsx'
+import { useLevels } from '../../hooks/useLevels'
 import { esc, openReportAsyncSafe } from '../../utils/reportPrint'
 
 function generateColors(count) {
@@ -56,6 +57,7 @@ function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGener
 // ── Page ────────────────────────────────────────────────────────────────────
 export default function AdminReports() {
   const { t } = useI18n()
+  const { levelOrder: LEVEL_ORDER_MAP } = useLevels()
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loadingClasses, setLoadingClasses] = useState(false)
@@ -205,11 +207,10 @@ export default function AdminReports() {
           byDept[dept].push(c)
         })
 
-        const LEVEL_ORDER = ['L1','L2','L3','M1','M2','D1','D2','D3']
         const sections = Object.entries(byDept).sort(([a], [b]) => a.localeCompare(b)).map(([dept, list]) => {
           const sorted = [...list].sort((a, b) => {
-            const ia = LEVEL_ORDER.indexOf(a.level), ib = LEVEL_ORDER.indexOf(b.level)
-            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.semester - b.semester
+            const ia = LEVEL_ORDER_MAP[a.level] ?? 99, ib = LEVEL_ORDER_MAP[b.level] ?? 99
+            return ia - ib || a.semester - b.semester
           })
           const rows = sorted.map(c => {
             const actLbl = c.is_active ? 'Actif' : 'Inactif'

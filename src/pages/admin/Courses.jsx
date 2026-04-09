@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { courseApi, departmentApi } from '../../services/api'
 import { useI18n } from '../../i18n/index.jsx'
+import { useLevels } from '../../hooks/useLevels'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
 import {
@@ -11,12 +12,11 @@ import {
   TrashIcon,
   BookOpenIcon,
 } from '@heroicons/react/24/outline'
-
-const LEVELS = ['L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3']
 const SEMESTERS = ['1', '2', '3']
 
 export default function AdminCourses() {
   const { t } = useI18n()
+  const { levelCodes: LEVELS, loading: levelsLoading } = useLevels()
   const [courses, setCourses] = useState([])
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)

@@ -24,11 +24,11 @@ import api, {
   courseApi,
 } from "../../services/api";
 import { useI18n } from "../../i18n/index.jsx";
-
-const LEVELS = ["L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3"];
+import { useLevels } from "../../hooks/useLevels";
 
 export default function UnifiedStudentManagement() {
   const { t } = useI18n();
+  const { levelCodes: LEVELS } = useLevels();
   const navigate = useNavigate();
   // State for student list
   const [students, setStudents] = useState([]);

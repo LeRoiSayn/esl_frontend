@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { useAuth } from '../../context/AuthContext'
 import { useI18n } from '../../i18n/index.jsx'
+import { useLevels } from '../../hooks/useLevels'
 import { studentApi } from '../../services/api'
 import { PrinterIcon } from '@heroicons/react/24/outline'
 import { LOGO_URL, openReportViewer } from '../../utils/reportPrint'
@@ -24,6 +25,7 @@ function mention20(score20) {
 export default function StudentGrades() {
   const { user } = useAuth()
   const { t } = useI18n()
+  const { levelOrder: levelOrderMap } = useLevels()
   const [enrollments, setEnrollments] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -38,7 +40,6 @@ export default function StudentGrades() {
   const handlePrint = () => {
     // Group ALL courses by level → semester (for a proper academic transcript)
     const SEM_LABELS = { '1': 'Semestre 1', '2': 'Semestre 2', '3': "Semestre d'été / Rattrapage" }
-    const LEVEL_ORDER = ['L1','L2','L3','M1','M2','D1','D2','D3']
     const grouped = {}
     enrollments.forEach(e => {
       const level = e.class?.course?.level || 'Niveau inconnu'
@@ -50,8 +51,8 @@ export default function StudentGrades() {
 
     let tableBody = ''
     const sortedLevels = Object.keys(grouped).sort((a, b) => {
-      const ia = LEVEL_ORDER.indexOf(a), ib = LEVEL_ORDER.indexOf(b)
-      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+      const ia = levelOrderMap[a] ?? 99, ib = levelOrderMap[b] ?? 99
+      return ia - ib
     })
     sortedLevels.forEach(level => {
       Object.entries(grouped[level]).sort(([a], [b]) => a.localeCompare(b)).forEach(([sem, courses]) => {

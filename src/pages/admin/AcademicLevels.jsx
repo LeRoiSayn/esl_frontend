@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { academicLevelApi } from '../../services/api'
+import { invalidateLevelsCache } from '../../hooks/useLevels'
 import { useI18n } from '../../i18n/index.jsx'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
@@ -58,6 +59,7 @@ export default function AcademicLevels() {
         await academicLevelApi.create(formData)
         toast.success(t('created'))
       }
+      invalidateLevelsCache()
       setModalOpen(false)
       fetchLevels()
     } catch (err) {
@@ -71,6 +73,7 @@ export default function AcademicLevels() {
     try {
       await academicLevelApi.toggle(level.id)
       toast.success(level.is_active ? t('disabled') : t('enabled'))
+      invalidateLevelsCache()
       fetchLevels()
     } catch {
       toast.error(t('error'))
@@ -83,6 +86,7 @@ export default function AcademicLevels() {
     try {
       await academicLevelApi.delete(level.id)
       toast.success(t('deleted'))
+      invalidateLevelsCache()
       fetchLevels()
     } catch (err) {
       toast.error(err.response?.data?.message || t('error'))
@@ -93,26 +97,29 @@ export default function AcademicLevels() {
 
   const columns = [
     {
-      key: 'code',
-      label: t('code'),
-      render: (level) => (
+      header: t('code'),
+      accessor: 'code',
+      cell: (level) => (
         <span className="font-mono font-bold text-primary-600 dark:text-primary-400">
           {level.code}
         </span>
       ),
     },
-    { key: 'label', label: t('label') },
     {
-      key: 'order',
-      label: t('order'),
-      render: (level) => (
+      header: t('label'),
+      accessor: 'label',
+    },
+    {
+      header: t('display_order'),
+      accessor: 'order',
+      cell: (level) => (
         <span className="text-gray-500 dark:text-gray-400">{level.order}</span>
       ),
     },
     {
-      key: 'is_active',
-      label: t('status'),
-      render: (level) => (
+      header: t('status'),
+      accessor: 'is_active',
+      cell: (level) => (
         <button
           onClick={() => handleToggle(level)}
           className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
@@ -126,9 +133,9 @@ export default function AcademicLevels() {
       ),
     },
     {
-      key: 'actions',
-      label: t('actions'),
-      render: (level) => (
+      header: t('actions'),
+      accessor: 'actions',
+      cell: (level) => (
         <div className="flex items-center gap-2">
           <button
             onClick={() => openEdit(level)}
@@ -231,6 +238,9 @@ export default function AcademicLevels() {
               onChange={e => setFormData(p => ({ ...p, order: Number(e.target.value) }))}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-100 bg-gray-50 dark:bg-dark-300 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              {t('display_order_hint')}
+            </p>
           </div>
 
           <div className="flex gap-3 pt-2">

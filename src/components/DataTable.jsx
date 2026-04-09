@@ -18,6 +18,7 @@ export default function DataTable({
   actions,
   loading = false,
   emptyMessage = 'No data available',
+  emptyIcon,
   onRowClick,
   rowClassName,
 }) {
@@ -130,6 +131,7 @@ export default function DataTable({
             ) : paginatedData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="text-center py-12 text-gray-500">
+                  {emptyIcon && <div className="flex justify-center mb-3">{emptyIcon}</div>}
                   {emptyMessage}
                 </td>
               </tr>

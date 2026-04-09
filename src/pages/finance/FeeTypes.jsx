@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import { feeTypeApi, systemSettingsApi } from '../../services/api'
+import { useLevels } from '../../hooks/useLevels'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
 import { PlusIcon, PencilIcon, TrashIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline'
@@ -9,6 +10,7 @@ import { useI18n } from '../../i18n/index.jsx'
 
 export default function FinanceFeeTypes() {
   const { t } = useI18n()
+  const { levelCodes: LEVELS } = useLevels()
   const [feeTypes, setFeeTypes] = useState([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -90,7 +92,7 @@ export default function FinanceFeeTypes() {
             <label className="label">{t('level')}</label>
             <select value={formData.level} onChange={(e) => setFormData({...formData, level: e.target.value})} className="input">
               <option value="">{t('all_levels')}</option>
-              {['L1','L2','L3','M1','M2','D1','D2','D3'].map(l => <option key={l} value={l}>{l}</option>)}
+              {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
           <div><label className="label">{t('description')}</label><textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="input" rows={3} /></div>

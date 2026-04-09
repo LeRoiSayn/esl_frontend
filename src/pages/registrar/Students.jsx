@@ -6,14 +6,17 @@ import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
 import { PlusIcon, TrashIcon, ArrowUpCircleIcon, CheckCircleIcon, PencilIcon } from '@heroicons/react/24/outline'
 import { useI18n } from '../../i18n/index.jsx'
+import { useLevels } from '../../hooks/useLevels'
 
-const LEVELS = ['L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3']
 const STATUSES = ['active', 'inactive', 'graduated', 'suspended']
-const UNDERGRADUATE_LEVELS = ['L1', 'L2', 'L3']
 const NEXT_LEVEL = { L1: 'L2', L2: 'L3' }
 
 export default function RegistrarStudents() {
   const { t } = useI18n()
+  const { levelCodes: LEVELS, levels: levelsData } = useLevels()
+  const UNDERGRADUATE_LEVELS = levelsData.filter(l => l.cycle === 'undergraduate').map(l => l.code).length > 0
+    ? levelsData.filter(l => l.cycle === 'undergraduate').map(l => l.code)
+    : LEVELS.filter(c => c.startsWith('L'))
   const [students, setStudents] = useState([])
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)

@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { registrarApi, studentApi, teacherApi } from '../../services/api'
 import { useI18n } from '../../i18n/index.jsx'
+import { useLevels } from '../../hooks/useLevels'
 import { esc, openReportAsyncSafe } from '../../utils/reportPrint'
 
 const ROLES = ['admin', 'finance', 'registrar', 'teacher', 'student']
@@ -19,7 +20,6 @@ const ROLE_LABELS = {
   teacher: 'Enseignants',
   student: 'Étudiants',
 }
-const LEVEL_ORDER = ['L1', 'L2', 'L3', 'M1', 'M2', 'D1', 'D2', 'D3']
 
 function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGenerate, loading, delay = 0 }) {
   const { t } = useI18n()
@@ -55,6 +55,7 @@ function ReportCard({ icon: Icon, iconBg, iconColor, title, description, onGener
 
 export default function RegistrarReports() {
   const { t } = useI18n()
+  const { levelOrder: LEVEL_ORDER_MAP } = useLevels()
   const [loadingUsers, setLoadingUsers] = useState(false)
   const [loadingLevels, setLoadingLevels] = useState(false)
   const [loadingDepts, setLoadingDepts] = useState(false)
@@ -127,8 +128,8 @@ export default function RegistrarReports() {
         })
 
         const sortedLevels = Object.keys(grouped).sort((a, b) => {
-          const ia = LEVEL_ORDER.indexOf(a), ib = LEVEL_ORDER.indexOf(b)
-          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+          const ia = LEVEL_ORDER_MAP[a] ?? 99, ib = LEVEL_ORDER_MAP[b] ?? 99
+          return ia - ib
         })
 
         const sections = sortedLevels.map(lvl => {
