@@ -279,29 +279,37 @@ export function buildQuizResultsReportBody({
   const rows =
     (attempts || [])
       .map((a) => {
+        const inProgress = a.status === 'in_progress'
         const sc = a.score
         const passed =
+          !inProgress &&
           typeof sc === 'number' &&
           !Number.isNaN(passAt) &&
           sc >= passAt
-        const scoreStr =
-          typeof sc === 'number' ? sc.toFixed(1) : String(sc ?? '—')
-        const statusLbl = passed ? 'Réussi' : 'Non reçu'
-        const done = a.completed_at
-          ? new Date(a.completed_at).toLocaleString('fr-FR')
-          : '—'
-        return `<tr>
+        const scoreStr = inProgress
+          ? '—'
+          : typeof sc === 'number' ? sc.toFixed(1) : String(sc ?? '0.0')
+        const statusLbl = inProgress ? 'En cours' : passed ? 'Réussi' : 'Non reçu'
+        const done = inProgress
+          ? 'En cours'
+          : a.completed_at
+            ? new Date(a.completed_at).toLocaleString('fr-FR')
+            : '—'
+        const rowStyle = inProgress ? ' style="opacity:0.7;font-style:italic"' : ''
+        return `<tr${rowStyle}>
       <td>${esc(a.student?.name)}</td>
       <td style="font-family:monospace;font-size:10px">${esc(a.student?.registration_number || '—')}</td>
-      <td style="text-align:center;font-weight:600">${esc(scoreStr)}/${esc(String(q.total_points ?? ''))}</td>
+      <td style="text-align:center;font-weight:600">${esc(scoreStr)}${inProgress ? '' : '/' + esc(String(q.total_points ?? ''))}</td>
       <td style="text-align:center"><span class="badge">${esc(statusLbl)}</span></td>
-      <td style="text-align:center">${esc(String(a.correct_count ?? '—'))}/${esc(String(a.total_questions ?? '—'))}</td>
+      <td style="text-align:center">${inProgress ? '—' : esc(String(a.correct_count ?? '—')) + '/' + esc(String(a.total_questions ?? '—'))}</td>
       <td style="font-size:11px;color:#374151">${esc(done)}</td>
     </tr>`
       })
       .join('') ||
     `<tr><td colspan="6" style="text-align:center;color:#6b7280">Aucune tentative</td></tr>`
 
+  const completed = st.completed_count ?? st.total_attempts ?? 0
+  const inProg = st.in_progress_count ?? 0
   const avg =
     typeof st.average_score === 'number'
       ? st.average_score.toFixed(1)
@@ -317,13 +325,20 @@ export function buildQuizResultsReportBody({
   const pr =
     typeof st.pass_rate === 'number' ? `${st.pass_rate.toFixed(0)} %` : '—'
 
+  const inProgNote = inProg > 0
+    ? `<div class="info-box" style="background:#fffbeb;border-color:#fcd34d;color:#92400e">
+        &#9888; ${inProg} étudiant(s) ont commencé le quiz mais ne l'ont pas encore soumis.
+       </div>`
+    : ''
+
   return `
     <div class="info-box">
       <strong>Cours :</strong> ${esc(courseName || '—')}
       &nbsp;·&nbsp; <strong>Seuil :</strong> ${esc(String(q.passing_score ?? '—'))} / ${esc(String(q.total_points ?? '—'))} pts
     </div>
+    ${inProgNote}
     <div class="summary-row">
-      <div class="summary-cell"><div class="summary-lbl">Tentatives</div><div class="summary-val">${esc(String(st.total_attempts ?? 0))}</div></div>
+      <div class="summary-cell"><div class="summary-lbl">Terminées</div><div class="summary-val">${esc(String(completed))}</div></div>
       <div class="summary-cell"><div class="summary-lbl">Moyenne</div><div class="summary-val">${esc(avg)}</div></div>
       <div class="summary-cell"><div class="summary-lbl">Maximum</div><div class="summary-val">${esc(hi)}</div></div>
       <div class="summary-cell"><div class="summary-lbl">Minimum</div><div class="summary-val">${esc(lo)}</div></div>
@@ -337,7 +352,7 @@ export function buildQuizResultsReportBody({
         <th style="text-align:center">Score</th>
         <th style="text-align:center">Statut</th>
         <th style="text-align:center">Bonnes réponses</th>
-        <th>Terminé le</th>
+        <th>Date</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>

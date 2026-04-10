@@ -1449,35 +1449,42 @@ const ELearning = () => {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/80 dark:border-dark-100 p-3 text-center">
               <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                {data?.stats?.total_attempts}
+                {data?.stats?.completed_count ?? data?.stats?.total_attempts}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_attempts')}</p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/80 dark:border-dark-100 p-3 text-center">
               <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                {data?.stats?.average_score?.toFixed(1)}
+                {data?.stats?.average_score != null ? Number(data.stats.average_score).toFixed(1) : '—'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_average')}</p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/80 dark:border-dark-100 p-3 text-center">
               <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                {data?.stats?.highest_score?.toFixed(1)}
+                {data?.stats?.highest_score != null ? Number(data.stats.highest_score).toFixed(1) : '—'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_highest')}</p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/50 dark:border-dark-100 p-3 text-center">
               <p className="text-2xl font-bold text-gray-700 dark:text-gray-200 tabular-nums">
-                {data?.stats?.lowest_score?.toFixed(1)}
+                {data?.stats?.lowest_score != null ? Number(data.stats.lowest_score).toFixed(1) : '—'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_lowest')}</p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-200 rounded-xl border border-gray-200/80 dark:border-dark-100 p-3 text-center sm:col-span-1 col-span-2">
               <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
-                {data?.stats?.pass_rate?.toFixed(0)}%
+                {data?.stats?.pass_rate != null ? Number(data.stats.pass_rate).toFixed(0) : '—'}%
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t('stat_pass_rate')}</p>
             </div>
           </div>
+          {/* In-progress badge */}
+          {(data?.stats?.in_progress_count ?? 0) > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg text-sm text-amber-700 dark:text-amber-300">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+              {data.stats.in_progress_count} {t('quiz_in_progress_label')}
+            </div>
+          )}
 
           {/* Results Table */}
           <div className="overflow-x-auto max-h-80">
@@ -1491,38 +1498,53 @@ const ELearning = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-dark-100">
-                {data?.attempts?.map((attempt) => (
-                  <tr key={attempt.id}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {attempt.student.name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {attempt.student.registration_number}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="font-semibold text-gray-900 dark:text-white tabular-nums">
-                        {attempt.score?.toFixed(1)}/{data.quiz.total_points}
-                      </span>
-                      <span
-                        className={`ml-2 text-[10px] font-medium px-2 py-0.5 rounded-full border ${
-                          attempt.score >= data.quiz.passing_score
-                            ? "border-gray-300 bg-gray-100 text-gray-700 dark:bg-dark-100 dark:border-dark-100 dark:text-gray-300"
-                            : "border-gray-300 bg-gray-100 text-gray-600 dark:bg-dark-100 dark:border-dark-100 dark:text-gray-400"
-                        }`}
-                      >
-                        {attempt.score >= data.quiz.passing_score ? t('passed') : t('failed')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">
-                      {attempt.correct_count}/{attempt.total_questions}
-                    </td>
-                    <td className="px-4 py-3 text-center text-gray-500 text-xs">
-                      {formatDisplayTime(attempt.completed_at, timeFormat)}
-                    </td>
-                  </tr>
-                ))}
+                {data?.attempts?.map((attempt) => {
+                  const isInProgress = attempt.status === 'in_progress';
+                  return (
+                    <tr key={attempt.id} className={isInProgress ? "opacity-70" : ""}>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {attempt.student.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {attempt.student.registration_number}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {isInProgress ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border border-amber-300 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:border-amber-800/40 dark:text-amber-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            {t('quiz_in_progress_short')}
+                          </span>
+                        ) : (
+                          <>
+                            <span className="font-semibold text-gray-900 dark:text-white tabular-nums">
+                              {attempt.score != null ? Number(attempt.score).toFixed(1) : '0.0'}/{data.quiz.total_points}
+                            </span>
+                            <span
+                              className={`ml-2 text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                                attempt.score >= data.quiz.passing_score
+                                  ? "border-gray-300 bg-gray-100 text-gray-700 dark:bg-dark-100 dark:border-dark-100 dark:text-gray-300"
+                                  : "border-gray-300 bg-gray-100 text-gray-600 dark:bg-dark-100 dark:border-dark-100 dark:text-gray-400"
+                              }`}
+                            >
+                              {attempt.score >= data.quiz.passing_score ? t('passed') : t('failed')}
+                            </span>
+                          </>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">
+                        {isInProgress ? '—' : `${attempt.correct_count}/${attempt.total_questions}`}
+                      </td>
+                      <td className="px-4 py-3 text-center text-gray-500 text-xs">
+                        {isInProgress
+                          ? <span className="text-amber-600 dark:text-amber-400">{t('quiz_in_progress_short')}</span>
+                          : formatDisplayTime(attempt.completed_at, timeFormat)
+                        }
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             {data?.attempts?.length === 0 && (

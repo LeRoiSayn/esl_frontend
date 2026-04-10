@@ -1103,6 +1103,8 @@
   "col_correct_answers": "Correct answers",
   "col_date": "Date",
   "no_attempts_yet": "No attempts for this quiz yet.",
+  "quiz_in_progress_label": "student(s) currently in progress",
+  "quiz_in_progress_short": "In progress",
   "create_online_course": "Create a course",
   "upload_document_btn": "Upload a document",
   "create_quiz_btn": "Create a quiz",

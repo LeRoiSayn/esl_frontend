@@ -1097,6 +1097,8 @@
   "col_correct_answers": "Réponses correctes",
   "col_date": "Date",
   "no_attempts_yet": "Aucune tentative pour ce quiz.",
+  "quiz_in_progress_label": "étudiant(s) en cours de quiz",
+  "quiz_in_progress_short": "En cours",
   "create_online_course": "Créer un cours",
   "upload_document_btn": "Uploader un document",
   "create_quiz_btn": "Créer un quiz",
