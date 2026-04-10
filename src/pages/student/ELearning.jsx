@@ -395,13 +395,24 @@ const StudentELearning = () => {
     } catch (_) {}
   }, []);
 
+  // Poll for live-status changes — but only when a live or scheduled course exists.
+  // Interval: 30s when all courses are ended/no courses, 10s when live/scheduled.
   useEffect(() => {
     if (!user?.student?.id) return;
-    const timer = setInterval(() => {
-      refreshOnlineCourses();
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [user?.student?.id, refreshOnlineCourses]);
+    let timerId;
+    const schedule = () => {
+      const hasActive = onlineCourses.some(
+        (c) => c.status === "live" || c.status === "scheduled",
+      );
+      const delay = hasActive ? 10_000 : 30_000;
+      timerId = setTimeout(async () => {
+        await refreshOnlineCourses();
+        schedule(); // reschedule after each fetch (avoids overlap)
+      }, delay);
+    };
+    schedule();
+    return () => clearTimeout(timerId);
+  }, [user?.student?.id, onlineCourses, refreshOnlineCourses]);
 
   useEffect(() => {
     const selectedCourseId = getEnrollmentCourseId(selectedCourse);
@@ -435,16 +446,18 @@ const StudentELearning = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const onlineRes = await api.get("/elearning/courses/student");
-      setOnlineCourses(onlineRes.data.courses || []);
-
+      // Fire both requests in parallel instead of sequentially
+      const requests = [api.get("/elearning/courses/student")];
       if (user?.student?.id) {
-        try {
-          const enrolledRes = await api.get(`/students/${user.student.id}/courses`);
-          setEnrolledCourses(enrolledRes.data.data || []);
-        } catch (e) {
-          setEnrolledCourses([]);
-        }
+        requests.push(api.get(`/students/${user.student.id}/courses`));
+      }
+      const [onlineRes, enrolledRes] = await Promise.allSettled(requests);
+
+      if (onlineRes.status === "fulfilled") {
+        setOnlineCourses(onlineRes.value.data.courses || []);
+      }
+      if (enrolledRes?.status === "fulfilled") {
+        setEnrolledCourses(enrolledRes.value.data.data || []);
       }
     } catch (_) {
     } finally {
@@ -452,22 +465,42 @@ const StudentELearning = () => {
     }
   };
 
-  const fetchMaterials = async (courseId) => {
+  // Combined fetch: replaces 3 separate API calls with 1 when a course is selected
+  const fetchCourseData = async (courseId) => {
     try {
-      const response = await api.get(`/elearning/materials/course/${courseId}`);
-      setMaterials(response.data.materials || []);
-    } catch (error) {
+      const res = await api.get(`/elearning/course-data/${courseId}`);
+      const data = res.data;
+      setMaterials(data.materials || []);
+
+      const quizList = data.quizzes || [];
+      setQuizzes(quizList);
+      // Schedule re-fetch when a quiz becomes available within the next hour
+      quizList
+        .filter(
+          (q) =>
+            q.available_from &&
+            naiveToMs(q.available_from) > Date.now() &&
+            q.status === "published",
+        )
+        .forEach((q) => {
+          const ms = naiveToMs(q.available_from) - Date.now();
+          if (ms < 3_600_000) setTimeout(() => fetchCourseData(courseId), ms + 500);
+        });
+
+      setAssignments(data.assignments || []);
+    } catch (_) {
       setMaterials([]);
+      setQuizzes([]);
+      setAssignments([]);
     }
   };
 
+  // Keep individual fetchers for targeted refreshes (e.g. after quiz submission)
   const fetchQuizzes = async (courseId) => {
     try {
       const response = await api.get(`/elearning/quizzes/course/${courseId}`);
       const list = response.data.quizzes || [];
       setQuizzes(list);
-
-      // Schedule a re-fetch when a quiz becomes available within the next hour
       list
         .filter(
           (q) =>
@@ -479,7 +512,7 @@ const StudentELearning = () => {
           const ms = naiveToMs(q.available_from) - Date.now();
           if (ms < 3_600_000) setTimeout(() => fetchQuizzes(courseId), ms + 500);
         });
-    } catch (error) {
+    } catch (_) {
       setQuizzes([]);
     }
   };
@@ -488,7 +521,7 @@ const StudentELearning = () => {
     try {
       const response = await api.get(`/elearning/assignments/course/${courseId}`);
       setAssignments(response.data.assignments || []);
-    } catch (error) {
+    } catch (_) {
       setAssignments([]);
     }
   };
@@ -497,6 +530,9 @@ const StudentELearning = () => {
     if (!enrollmentIdStr) {
       setSelectedEnrollmentId("");
       setSelectedCourse(null);
+      setMaterials([]);
+      setQuizzes([]);
+      setAssignments([]);
       return;
     }
     const enrollment = enrolledCourses.find(
@@ -506,9 +542,8 @@ const StudentELearning = () => {
     setSelectedCourse(enrollment || null);
     const cid = enrollment ? getEnrollmentCourseId(enrollment) : null;
     if (cid) {
-      fetchMaterials(cid);
-      fetchQuizzes(cid);
-      fetchAssignments(cid);
+      // Single combined API call instead of 3 separate ones
+      fetchCourseData(cid);
     }
   };
 
