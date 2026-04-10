@@ -27,7 +27,7 @@ import {
 } from "@heroicons/react/24/outline";
 import api from "../../services/api";
 import { useI18n } from "../../i18n/index.jsx";
-import { toDatetimeLocalValue, datetimeLocalToIsoUtc } from "../../utils/datetimeLocal";
+import { toDatetimeLocalValue, datetimeLocalToIsoUtc, formatDisplayTime } from "../../utils/datetimeLocal";
 import {
   openReportAsync,
   buildOnlineCourseAttendanceReportBody,
@@ -50,6 +50,13 @@ const ELearning = () => {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [editingCourse, setEditingCourse] = useState(null);
+  const [timeFormat, setTimeFormat] = useState(() => localStorage.getItem('elearning_time_format') || '24h');
+
+  const toggleTimeFormat = () => {
+    const next = timeFormat === '24h' ? '12h' : '24h';
+    setTimeFormat(next);
+    localStorage.setItem('elearning_time_format', next);
+  };
   const [sessionReportLoadingId, setSessionReportLoadingId] = useState(null);
 
   useEffect(() => {
@@ -825,13 +832,11 @@ const ELearning = () => {
       }
       setIsSubmitting(true);
       try {
-        // Convert datetime-local strings (local time, no TZ) to UTC ISO so the
-        // server stores the correct moment regardless of server/client timezone mismatch.
-        const toUTC = (val) => (val ? new Date(val).toISOString() : null);
+        // Send naive wall-clock times — no UTC conversion to avoid timezone drift.
         const payload = {
           ...formData,
-          available_from: toUTC(formData.available_from),
-          available_until: toUTC(formData.available_until),
+          available_from: datetimeLocalToIsoUtc(formData.available_from),
+          available_until: datetimeLocalToIsoUtc(formData.available_until),
         };
         await api.post("/elearning/quizzes", payload);
         toast.success(t('quiz_created'));
@@ -1183,10 +1188,9 @@ const ELearning = () => {
       e.preventDefault();
       setIsSubmitting(true);
       try {
-        const toUTC = (val) => (val ? new Date(val).toISOString() : null);
         await api.post("/elearning/assignments", {
           ...formData,
-          due_date: toUTC(formData.due_date),
+          due_date: datetimeLocalToIsoUtc(formData.due_date),
         });
         toast.success(t('assignment_created'));
         setShowModal(null);
@@ -1515,7 +1519,7 @@ const ELearning = () => {
                       {attempt.correct_count}/{attempt.total_questions}
                     </td>
                     <td className="px-4 py-3 text-center text-gray-500 text-xs">
-                      {new Date(attempt.completed_at).toLocaleString()}
+                      {formatDisplayTime(attempt.completed_at, timeFormat)}
                     </td>
                   </tr>
                 ))}
@@ -1874,10 +1878,7 @@ const ELearning = () => {
         {course.scheduled_at && (
           <span className="flex items-center gap-1">
             <CalendarIcon className="w-4 h-4" />
-            {new Date(course.scheduled_at).toLocaleString("fr-FR", {
-              dateStyle: "medium",
-              timeStyle: "short",
-            })}
+            {formatDisplayTime(course.scheduled_at, timeFormat)}
           </span>
         )}
         <span className="flex items-center gap-1">
@@ -1990,17 +1991,9 @@ const ELearning = () => {
         <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mb-2 bg-gray-50 dark:bg-dark-300 px-2 py-1.5 rounded-lg">
           <ClockIcon className="w-3.5 h-3.5 shrink-0" />
           <span>
-            {quiz.available_from
-              ? new Date(quiz.available_from).toLocaleString(undefined, {
-                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-                })
-              : "…"}
+            {quiz.available_from ? formatDisplayTime(quiz.available_from, timeFormat) : "…"}
             {" → "}
-            {quiz.available_until
-              ? new Date(quiz.available_until).toLocaleString(undefined, {
-                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-                })
-              : "…"}
+            {quiz.available_until ? formatDisplayTime(quiz.available_until, timeFormat) : "…"}
           </span>
         </div>
       )}
@@ -2115,12 +2108,25 @@ const ELearning = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            E-Learning
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Gérez vos cours en ligne, documents, quiz et devoirs
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                E-Learning
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400">
+                Gérez vos cours en ligne, documents, quiz et devoirs
+              </p>
+            </div>
+            {/* 12h / 24h time format toggle */}
+            <button
+              onClick={toggleTimeFormat}
+              title={timeFormat === '24h' ? 'Passer en format 12h (AM/PM)' : 'Passer en format 24h'}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-100 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-200 transition-colors"
+            >
+              <ClockIcon className="w-3.5 h-3.5" />
+              {timeFormat === '24h' ? '24h' : '12h AM/PM'}
+            </button>
+          </div>
         </motion.div>
 
         {/* Course Selector */}

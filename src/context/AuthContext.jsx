@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import api from '../services/api'
 import toast from 'react-hot-toast'
+import { systemSettingsApi } from '../services/api'
+import { setAppTimezone } from '../utils/datetimeLocal'
 
 const AuthContext = createContext(null)
 
@@ -18,6 +20,13 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkAuth()
+    // Load timezone from public settings once at startup
+    systemSettingsApi.getPublic()
+      .then(res => {
+        const tz = res.data?.data?.timezone
+        if (tz) setAppTimezone(tz)
+      })
+      .catch(() => {}) // fail silently
   }, [])
 
   const checkAuth = async () => {

@@ -21,6 +21,7 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n/index.jsx";
 import { openExternalUrl, saveOrOpenBlob } from "../../utils/mobileWeb";
+import { formatDisplayTime, naiveToMs } from "../../utils/datetimeLocal";
 
 function getEnrollmentCourseId(enrollment) {
   if (!enrollment) return null;
@@ -471,11 +472,11 @@ const StudentELearning = () => {
         .filter(
           (q) =>
             q.available_from &&
-            new Date(q.available_from) > new Date() &&
+            naiveToMs(q.available_from) > Date.now() &&
             q.status === "published",
         )
         .forEach((q) => {
-          const ms = new Date(q.available_from) - Date.now();
+          const ms = naiveToMs(q.available_from) - Date.now();
           if (ms < 3_600_000) setTimeout(() => fetchQuizzes(courseId), ms + 500);
         });
     } catch (error) {
@@ -593,8 +594,8 @@ const StudentELearning = () => {
   const isQuizAvailable = (quiz) => {
     if ((quiz.my_attempts || 0) >= quiz.max_attempts) return false;
     if (quiz.status !== "published") return false;
-    if (quiz.available_from && new Date(quiz.available_from) > now) return false;
-    if (quiz.available_until && new Date(quiz.available_until) < now) return false;
+    if (quiz.available_from && naiveToMs(quiz.available_from) > Date.now()) return false;
+    if (quiz.available_until && naiveToMs(quiz.available_until) < Date.now()) return false;
     return true;
   };
 
@@ -933,12 +934,7 @@ const StudentELearning = () => {
                           {course.scheduled_at && (
                             <span className="flex items-center gap-1">
                               <CalendarIcon className="w-4 h-4" />
-                              {new Date(course.scheduled_at).toLocaleString(undefined, {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {formatDisplayTime(course.scheduled_at)}
                             </span>
                           )}
                         </div>
@@ -1104,23 +1100,9 @@ const StudentELearning = () => {
                         <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500 mb-2 bg-gray-50 dark:bg-dark-300 px-2 py-1.5 rounded-lg">
                           <ClockIcon className="w-3.5 h-3.5 shrink-0" />
                           <span>
-                            {quiz.available_from
-                              ? new Date(quiz.available_from).toLocaleString(undefined, {
-                                  day: "numeric",
-                                  month: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : "…"}
+                            {quiz.available_from ? formatDisplayTime(quiz.available_from) : "…"}
                             {" → "}
-                            {quiz.available_until
-                              ? new Date(quiz.available_until).toLocaleString(undefined, {
-                                  day: "numeric",
-                                  month: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                              : "…"}
+                            {quiz.available_until ? formatDisplayTime(quiz.available_until) : "…"}
                           </span>
                         </div>
                       )}
@@ -1243,12 +1225,7 @@ const StudentELearning = () => {
                                 }
                               >
                                 <CalendarIcon className="w-4 h-4 inline mr-1" />
-                                {new Date(assignment.due_date).toLocaleDateString(undefined, {
-                                  day: "numeric",
-                                  month: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })}
+                                {formatDisplayTime(assignment.due_date)}
                               </span>
                               {hasSubmitted && (
                                 <span className="text-gray-700 dark:text-gray-300 flex items-center gap-1">

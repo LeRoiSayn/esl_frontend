@@ -36,25 +36,53 @@ function saveSeen(set) {
 }
 
 /**
+ * Singleton AudioContext — created once, kept alive, resumed on user gestures.
+ * Browsers suspend AudioContext when created outside a user gesture; resuming
+ * it on any click unlocks future playback without requiring a gesture each time.
+ */
+let _audioCtx = null
+function _getAudioCtx() {
+  if (!_audioCtx) {
+    try {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    } catch (_) { return null }
+  }
+  return _audioCtx
+}
+// Unlock the context on any user interaction (runs once, then keeps listening
+// so the context stays resumed after mobile browsers auto-suspend it again)
+if (typeof window !== 'undefined') {
+  const _unlock = () => { _getAudioCtx()?.resume().catch(() => {}) }
+  window.addEventListener('click',     _unlock, { passive: true })
+  window.addEventListener('touchstart', _unlock, { passive: true })
+  window.addEventListener('keydown',   _unlock, { passive: true })
+}
+
+/**
  * Play a single soft "ting" notification chime using the Web Audio API.
  * No external file needed. Fails silently if audio is unavailable.
  */
 function playTing() {
   try {
-    const ctx  = new (window.AudioContext || window.webkitAudioContext)()
-    const osc  = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.type = 'sine'
-    // A5 → gentle slide to E5
-    osc.frequency.setValueAtTime(880, ctx.currentTime)
-    osc.frequency.exponentialRampToValueAtTime(659, ctx.currentTime + 0.18)
-    gain.gain.setValueAtTime(0.25, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55)
-    osc.start(ctx.currentTime)
-    osc.stop(ctx.currentTime + 0.6)
-    setTimeout(() => ctx.close(), 700)
+    const ctx = _getAudioCtx()
+    if (!ctx) return
+    // Resume is async; we schedule notes slightly in the future so they play
+    // even if the resume completes a few ms after this call.
+    ctx.resume().then(() => {
+      const osc  = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      const t = ctx.currentTime + 0.05   // small offset to ensure resume is done
+      // A5 → gentle slide to E5
+      osc.frequency.setValueAtTime(880, t)
+      osc.frequency.exponentialRampToValueAtTime(659, t + 0.18)
+      gain.gain.setValueAtTime(0.25, t)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55)
+      osc.start(t)
+      osc.stop(t + 0.6)
+    }).catch(() => {})
   } catch (_) {
     // Audio not supported — silent fail
   }
@@ -118,7 +146,17 @@ export default function NotificationDropdown({ t: tProp }) {
   const handleBellToggle = useCallback(() => {
     setIsOpen(prev => {
       const next = !prev
-      if (!next) markAsSeen()   // closing the panel → badge clears
+      if (!next) {
+        markAsSeen()   // closing the panel → badge clears
+      } else {
+        // Opening: this IS a user gesture — play sound if unseen notifications exist
+        const currentSeen      = loadSeen()
+        const currentDismissed = loadDismissed()
+        const hasUnseen = notifsRef.current.some(
+          n => !currentSeen.has(n.id) && !currentDismissed.has(n.id)
+        )
+        if (hasUnseen) playTing()
+      }
       return next
     })
   }, [markAsSeen])
